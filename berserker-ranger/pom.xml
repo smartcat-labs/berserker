@@ -1,0 +1,38 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>berserker</artifactId>
+        <groupId>io.smartcat</groupId>
+        <version>0.0.5-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>berserker-ranger</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Berserker Ranger</name>
+    <description>Ranger data source implementation.</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <version.ranger>0.0.5</version.ranger>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.smartcat</groupId>
+            <artifactId>berserker-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.smartcat</groupId>
+            <artifactId>ranger</artifactId>
+            <version>${version.ranger}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
