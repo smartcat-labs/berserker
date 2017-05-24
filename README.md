@@ -1,27 +1,13 @@
-# Ranger
+# Berserker
 
-Contextual data and load generator with modular architecture.
+Load generator with modular architecture.
 
-[![Build Status](https://travis-ci.org/smartcat-labs/ranger.svg?branch=master)](https://travis-ci.org/smartcat-labs/ranger)
-[ ![Download](https://api.bintray.com/packages/smartcat-labs/maven/ranger/images/download.svg) ](https://bintray.com/smartcat-labs/maven/ranger/_latestVersion)
+[![Build Status](https://travis-ci.org/smartcat-labs/berserker.svg?branch=master)](https://travis-ci.org/smartcat-labs/berserker)
+[ ![Download](https://api.bintray.com/packages/smartcat-labs/maven/berserker/images/download.svg) ](https://bintray.com/smartcat-labs/maven/berserker/_latestVersion)
 
 ## Introduction
 
-Ranger consists of two main separate parts, Data Generator and Load Generator, which can be used stand-alone or can be connected together.
-
-### Data Generator
-
-[Data Generator](ranger-data-generator) allows developers to quickly and in a simple manner define and create large number of objects whose attributes have randomly selected values from the configured set.
-
-It can be used for following:
-
-- quickly populate the database with meaningful values
-- create data based on defined rules (e.g. create 100 users out of which 10 have first name 'John' and they are born in 1980) in order to create test data for automated unit and integration tests
-- have meaningful data for load testing
-
-### Load Generator
-
-Load Generator is designed to be modular from beginning as illustrated on the following diagram.
+Berserker is designed to be modular from beginning as illustrated on the following diagram.
 
 ![Core Design](images/core-design.png)
 
@@ -30,24 +16,24 @@ Following diagram represents possible modules for Load Generator of which some a
 
 ![Architecture](images/architecture.png)
 
-Load generator is designed as command line tool, but having modular architecture makes it easy to use it as Java library as well.
+Berserker is designed as command line tool, but having modular architecture makes it easy to use it as Java library as well.
 
-### Ranger Commons
+### Berserker Commons
 
-[Ranger Commons](ranger-commons) holds interface for core and configuration and it provides signature all the modules need to confront to be able to work together.
+[Berserker Commons](berserker-commons) holds interface for core and configuration and it provides signature all the modules need to confront to be able to work together.
 
-### Ranger Load Generator Core
+### Berserker Core
 
-[Ranger Load Generator Core] contains Load Generator implementation itself and common data source, rate generator and worker implementations.
+[Berserker Core](berserker-core) contains load generator implementation, and common implementations of data source, rate generator and worker.
 
-### Ranger Runner
+### Berserker Runner
 
-[Ranger Runner](ranger-runner) represents runnable jar where desired data source, rate generator and worker can be specified within YAML configuration.
+[Berserker Runner](berserker-runner) represents runnable jar where desired data source, rate generator and worker can be specified within YAML configuration.
 Following section illustrates YAML configuration example.
 
 ```yaml
 load-generator-configuration:
-  data-source-configuration-name: DataGenerator
+  data-source-configuration-name: Ranger
   rate-generator-configuration-name: ConstantRateGenerator
   worker-configuration-name: Kafka
 
@@ -72,23 +58,23 @@ worker-configuration:
 
 Main part of configuration is `load-generator-configuration` where concrete modules which will be used for data source, rate generator and worker need to be specified. After `load-generator-configuration` section, there should be exactly one section for data source, rate generator and worker.
 Each section is allowed to contain module specific configuration as configuration interpretation will be done by module itself.
-In order for ranger-runner to be able to find particular module, each module jar must be in classpath.
+In order for berserker-runner to be able to find particular module, each module jar must be in classpath.
 
 ### Modules
 
 List of existing modules:
 
-#### Ranger Load Generator Data Generator
+#### Berserker Ranger
 
-[Ranger Load Generator Data Generator](ranger-load-generator-data-generator) is data source implementation based on data generator.
+[Berserker Ranger](berserker-ranger) is Ranger data source implementation.
 
-#### Ranger Load Generator Kafka
+#### Berserker Kafka
 
-[Ranger Load Generator Kafka](ranger-load-generator-kafka) is worker implementation which sends messages to Kafka cluster.
+[Berserker Kafka](berserker-kafka) is worker implementation which sends messages to Kafka cluster.
 
 ### Usage
 
-Load generator can be used either as a library or as a stand-alone command line tool.
+Berserker can be used either as a library or as a stand-alone command line tool.
 
 #### Library usage
 
@@ -116,8 +102,8 @@ Add the `dependency` element to your `<dependencies>` section in `pom.xml` depen
 
 #### Command line tool usage
 
-Download [Ranger Runner](https://bintray.com/smartcat-labs/maven/download_file?file_path=io%2Fsmartcat%2Franger-runner%2F0.0.5%2Franger-runner-0.0.5.jar).
+Download [Berserker Runner](https://bintray.com/smartcat-labs/maven/download_file?file_path=io%2Fsmartcat%2Franger-runner%2F0.0.5%2Franger-runner-0.0.5.jar).
 
-Run following command: `java -jar ranger-runner-0.0.5.jar -c <path_to_config_file>`
+Run following command: `java -jar berserker-runner-0.0.5.jar -c <path_to_config_file>`
 
-For more info on configuration file, see [Ranger Runner](#ranger-runner) section.
+For more info on configuration file, see [Berserker Runner](#berserker-runner) section.
