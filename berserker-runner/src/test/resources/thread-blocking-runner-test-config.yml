@@ -2,8 +2,8 @@ load-generator-configuration:
   data-source-configuration-name: Ranger
   rate-generator-configuration-name: ConstantRateGenerator
   worker-configuration-name: ThreadBlockingWorker
-  thread-count: 100
-  queue-capacity: 10000
+  thread-count: 1
+  queue-capacity: 10
 
 data-source-configuration:
   objectConfiguration:
@@ -14,10 +14,10 @@ data-source-configuration:
       -
         name: value
         values: Value1,Value2,Value3,Value4,Value5,Value6,Value7,Value8
-    numberOfObjects: 1000
+    numberOfObjects: 10
 
 rate-generator-configuration:
-  rate: 1000
+  rate: 10
 
 worker-configuration:
-  blockTime: 1000
+  key: value

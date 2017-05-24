@@ -9,8 +9,8 @@ import org.junit.Test;
 
 public class LoadGeneratorRunnerTest {
 
-    @Test(timeout = 3000)
-    public void should_not_block_thread_when_worker_is_wrapped_in_async_worker() {
+    @Test(timeout = 5000)
+    public void should_not_block_thread_when_worker_is_wrapped_in_async_worker() throws InterruptedException {
         // GIVEN
         String configFilePath = getFilePath("thread-blocking-runner-test-config.yml");
 
@@ -18,7 +18,8 @@ public class LoadGeneratorRunnerTest {
         LoadGeneratorRunner.main(new String[] { "-c", configFilePath });
 
         // THEN
-        // if wrapped in async worker, it should finish before timeout
+        // Non blocking worker should deplete all data source values.
+        // Purpose of timeout is that failing test does not hang indefinitely.
     }
 
     private String getFilePath(String fileName) {
