@@ -8,7 +8,7 @@
     <version>0.0.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>bBerserker</name>
+    <name>Berserker</name>
     <description>Modular load generator</description>
 
     <modules>

@@ -10,7 +10,7 @@
     <artifactId>berserker-core</artifactId>
     <packaging>jar</packaging>
 
-    <name>berserker Core</name>
+    <name>Berserker Core</name>
     <description>Contains load generator implementation, and common implementations of data source, rate generator and worker.</description>
 
     <properties>
