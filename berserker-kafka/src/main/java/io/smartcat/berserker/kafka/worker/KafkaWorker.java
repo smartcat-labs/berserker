@@ -12,7 +12,6 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.yaml.snakeyaml.Yaml;
 
 import io.smartcat.berserker.api.Worker;
-import io.smartcat.berserker.configuration.model.KafkaPayload;
 
 /**
  * Worker that publishes accepted {@link KafkaPayload}s to Kafka cluster. It uses {@link KafkaProducer} internally to
@@ -20,9 +19,11 @@ import io.smartcat.berserker.configuration.model.KafkaPayload;
  * <a href="https://kafka.apache.org/documentation/#producerconfigs">configuration properties</a>. Additionally, file
  * must contain <code>topic.name</code> property set to value of the topic to which messages will be published.
  */
-public class KafkaWorker implements Worker<KafkaPayload>, AutoCloseable {
+public class KafkaWorker implements Worker<Map<String, Object>>, AutoCloseable {
 
     private static final String TOPIC_NAME = "topic.name";
+    private static final String KEY = "key";
+    private static final String VALUE = "value";
 
     private final Map<String, Object> configuration;
 
@@ -54,8 +55,10 @@ public class KafkaWorker implements Worker<KafkaPayload>, AutoCloseable {
     }
 
     @Override
-    public void accept(KafkaPayload message) {
-        ProducerRecord<String, String> record = new ProducerRecord<>(topic, message.getKey(), message.getValue());
+    public void accept(Map<String, Object> message) {
+        String key = (String) message.get(KEY);
+        String value = (String) message.get(VALUE);
+        ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, value);
         producer.send(record);
     }
 
