@@ -1,34 +1,34 @@
 package io.smartcat.berserker.ranger.datasource;
 
-import java.util.Iterator;
+import java.util.Map;
 
 import io.smartcat.berserker.api.DataSource;
-import io.smartcat.berserker.configuration.model.KafkaPayload;
-import io.smartcat.ranger.AggregatedObjectGenerator;
+import io.smartcat.ranger.core.parser.DataGenerator;
 
 /**
  * Ranger data source implementation.
  */
-public class RangerDataSource implements DataSource<KafkaPayload> {
+public class RangerDataSource implements DataSource<Map<String, Object>> {
 
-    private final Iterator<KafkaPayload> iterator;
+    private final DataGenerator dataGenerator;
 
     /**
      * Constructs ranger data source with specified <code>aggregatedObjectGenerator</code>.
      *
-     * @param aggregatedObjectGenerator Generator which will be used to generate objects.
+     * @param dataGenerator Generator which will be used to generate objects.
      */
-    public RangerDataSource(AggregatedObjectGenerator<KafkaPayload> aggregatedObjectGenerator) {
-        this.iterator = aggregatedObjectGenerator.iterator();
+    public RangerDataSource(DataGenerator dataGenerator) {
+        this.dataGenerator = dataGenerator;
     }
 
     @Override
     public boolean hasNext(long time) {
-        return iterator.hasNext();
+        return true;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public KafkaPayload getNext(long time) {
-        return iterator.next();
+    public Map<String, Object> getNext(long time) {
+        return (Map<String, Object>) dataGenerator.next();
     }
 }
