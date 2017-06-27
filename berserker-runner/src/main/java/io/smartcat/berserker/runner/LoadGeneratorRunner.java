@@ -17,6 +17,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.reflections.Reflections;
 
+import com.codahale.metrics.MetricRegistry;
+
 import io.smartcat.berserker.LoadGenerator;
 import io.smartcat.berserker.api.DataSource;
 import io.smartcat.berserker.api.RateGenerator;
@@ -26,6 +28,7 @@ import io.smartcat.berserker.configuration.ConfigurationParseException;
 import io.smartcat.berserker.configuration.DataSourceConfiguration;
 import io.smartcat.berserker.configuration.GlobalConfiguration;
 import io.smartcat.berserker.configuration.LoadGeneratorConfiguration;
+import io.smartcat.berserker.configuration.MetricsReporterConfiguration;
 import io.smartcat.berserker.configuration.RateGeneratorConfiguration;
 import io.smartcat.berserker.configuration.WorkerConfiguration;
 import io.smartcat.berserker.configuration.YamlConfigurationLoader;
@@ -81,9 +84,10 @@ public class LoadGeneratorRunner {
                 configuration.rateGeneratorConfiguration);
         Worker workerDelegate = getWorker(loadGeneratorConfiguration.workerConfigurationName,
                 configuration.workerConfiguration);
-        Worker worker = wrapIntoAsyncWorker(workerDelegate, loadGeneratorConfiguration.threadCount,
-                loadGeneratorConfiguration.queueCapacity);
-
+        AsyncWorker worker = wrapIntoAsyncWorker(workerDelegate, loadGeneratorConfiguration.queueCapacity,
+                loadGeneratorConfiguration.threadCount, loadGeneratorConfiguration.metricsPrefix);
+        createAndStartReporter(worker.getMetricRegistry(), loadGeneratorConfiguration.metricsReporterConfigurationName,
+                configuration.metricsReporterConfiguration);
         LoadGenerator loadGenerator = new LoadGenerator(dataSource, rateGenerator, worker);
         loadGenerator.run();
     }
@@ -121,9 +125,17 @@ public class LoadGeneratorRunner {
         return workerConfguration.getWorker(configuration);
     }
 
-    private static <T> Worker<T> wrapIntoAsyncWorker(Worker<T> workerDelegate, int threadCount, int queueCapacity) {
-        return new AsyncWorker<>(workerDelegate, queueCapacity, (x) -> {
-        }, true, threadCount);
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static AsyncWorker wrapIntoAsyncWorker(Worker workerDelegate, int queueCapacity, int threadCount,
+            String metricsPrefix) {
+        return new AsyncWorker(workerDelegate, queueCapacity, true, metricsPrefix, threadCount);
+    }
+
+    private static void createAndStartReporter(MetricRegistry metricRegistry, String name,
+            Map<String, Object> configuration) {
+        MetricsReporterConfiguration metricsReporterConfiguration = getConfigurationWithName(name,
+                MetricsReporterConfiguration.class);
+        metricsReporterConfiguration.createAndStartReporter(metricRegistry, configuration);
     }
 
     private static <T extends BaseConfiguration> T getConfigurationWithName(String name, Class<T> clazz) {
