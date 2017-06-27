@@ -22,6 +22,16 @@ public class LoadGeneratorConfiguration {
     public String workerConfigurationName;
 
     /**
+     * Name of {@link com.codahale.metrics.Reporter Reporter} configuration.
+     */
+    public String metricsReporterConfigurationName;
+
+    /**
+     * Prefix used for metrics.
+     */
+    public String metricsPrefix;
+
+    /**
      * Number of threads to be used by Load Generator.
      */
     public int threadCount;

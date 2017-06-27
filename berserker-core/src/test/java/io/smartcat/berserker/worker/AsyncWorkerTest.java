@@ -44,7 +44,7 @@ public class AsyncWorkerTest {
                 return i++;
             }
         };
-        AsyncWorker<Integer> w = new AsyncWorker<>(delegate, 4, (x) -> { }, true, 4);
+        AsyncWorker<Integer> w = new AsyncWorker<>(delegate, 4, true, null, 4);
         LoadGenerator<Integer> lg = new LoadGenerator<>(ds, rg, w);
 
         // WHEN
@@ -91,7 +91,7 @@ public class AsyncWorkerTest {
                 return i++;
             }
         };
-        AsyncWorker<Integer> w = new AsyncWorker<>(delegate, 3, (x) -> { }, true, 3);
+        AsyncWorker<Integer> w = new AsyncWorker<>(delegate, 3, true, null, 3);
         LoadGenerator<Integer> lg = new LoadGenerator<>(ds, rg, w);
 
         // WHEN
@@ -140,7 +140,7 @@ public class AsyncWorkerTest {
                 return i++;
             }
         };
-        AsyncWorker<Integer> w = new AsyncWorker<>(delegate, 3, (x) -> { }, false, 3);
+        AsyncWorker<Integer> w = new AsyncWorker<>(delegate, 3, false, null, 3);
         LoadGenerator<Integer> lg = new LoadGenerator<>(ds, rg, w);
 
         // WHEN

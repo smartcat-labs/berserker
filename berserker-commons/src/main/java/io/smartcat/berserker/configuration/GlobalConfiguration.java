@@ -23,6 +23,11 @@ public class GlobalConfiguration {
     public Map<String, Object> rateGeneratorConfiguration;
 
     /**
+     * Configuration specific to {@link com.codahale.metrics.Reporter Reporter}.
+     */
+    public Map<String, Object> metricsReporterConfiguration;
+
+    /**
      * Configuration explaining which {@link DataSourceConfiguration}, {@link WorkerConfiguration} and
      * {@link RateGeneratorConfiguration} implementations will be used.
      */

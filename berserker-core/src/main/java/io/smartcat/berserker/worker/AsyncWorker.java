@@ -5,7 +5,10 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 
 import io.smartcat.berserker.api.AlreadyClosedException;
 import io.smartcat.berserker.api.Worker;
@@ -20,96 +23,108 @@ import io.smartcat.berserker.util.LinkedEvictingBlockingQueue;
  */
 public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
 
-    private final Consumer<WorkerMeta<T>> workerStatsGetherer;
+    private static final String DEFAULT_METRICS_PREFIX = "io.smartcat.berserker";
+    private static final String DROPPED = "dropped";
+    private static final String WAIT_TIME = "waitTime";
+    private static final String SERVICE_TIME = "serviceTime";
+    private static final String RESPONSE_TIME = "responseTime";
+    private static final String GENERATED_THROUGHPUT = "generatedThroughput";
+    private static final String PROCESSED_THROUGHPUT = "processedThroughput";
+    private static final String QUEUE_SIZE = "queueSize";
+
     private final LinkedEvictingBlockingQueue<DefaultWorkerMeta> queue;
     private final ThreadPoolExecutor threadPoolExecutor;
+    private final MetricRegistry metricRegistry;
+    private final Meter droppedMeter;
+    private final Histogram waitTime;
+    private final Histogram serviceTime;
+    private final Histogram responseTIme;
+    private final Meter generatedThroughput;
+    private final Meter processedThroughput;
 
     private boolean closed = false;
 
     /**
-     * Constructs asynchronous worker with specified <code>delegate</code> worker and <code>queueCapacity</code>.
-     * <code>workerStatsGetherer</code> is set to null consumer, <code>dropFromHead</code> is set to true,
-     * <code>threadCount</code> is set to <code>Runtime.getRuntime().availableProcessors()</code>,
-     * <code>threadFactory</code> is set to {@link DefaultThreadFactory}.
+     * Constructs asynchronous worker with specified <code>delegate</code> worker, <code>queueCapacity</code>.
+     * <code>dropFromHead</code> is set to true, <code>metricsPrefix</code> is set to
+     * <code>io.smartcat.berserker</code>, <code>threadCount</code> is set to
+     * <code>Runtime.getRuntime().availableProcessors()</code>, <code>threadFactory</code> is set to
+     * {@link DefaultThreadFactory}.
      *
      * @param delegate Worker which is run in thread pool and to which work is delegated.
      * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
      */
     public AsyncWorker(Worker<T> delegate, int queueCapacity) {
-        this(delegate, queueCapacity, (meta) -> { });
+        this(delegate, queueCapacity, true);
     }
 
     /**
      * Constructs asynchronous worker with specified <code>delegate</code> worker, <code>queueCapacity</code> and
-     * <code>workerStatsGetherer</code>. <code>dropFromHead</code> is set to true, <code>threadCount</code> is set to
-     * <code>Runtime.getRuntime().availableProcessors()</code>, <code>threadFactory</code> is set to
-     * {@link DefaultThreadFactory}.
-     *
-     * @param delegate Worker which is run in thread pool and to which work is delegated.
-     * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
-     * @param workerStatsGetherer Consumer which receives {@link WorkerMeta} packet information.
-     */
-    public AsyncWorker(Worker<T> delegate, int queueCapacity, Consumer<WorkerMeta<T>> workerStatsGetherer) {
-        this(delegate, queueCapacity, workerStatsGetherer, true);
-    }
-
-    /**
-     * Constructs asynchronous worker with specified <code>delegate</code> worker, <code>queueCapacity</code>,
-     * <code>workerStatsGetherer</code> and <code>dropFromHead</code>. <code>threadCount</code> is set to
-     * <code>Runtime.getRuntime().availableProcessors()</code>, <code>threadFactory</code> is set to
-     * {@link DefaultThreadFactory}.
-     *
-     * @param delegate Worker which is run in thread pool and to which work is delegated.
-     * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
-     * @param workerStatsGetherer Consumer which receives {@link WorkerMeta} packet information.
-     * @param dropFromHead If true, packet from head of the queue will be dropped, if false, packet from tail of the
-     *            queue will be dropped.
-     */
-    public AsyncWorker(Worker<T> delegate, int queueCapacity, Consumer<WorkerMeta<T>> workerStatsGetherer,
-            boolean dropFromHead) {
-        this(delegate, queueCapacity, workerStatsGetherer, dropFromHead, Runtime.getRuntime().availableProcessors());
-    }
-
-    /**
-     * Constructs asynchronous worker with specified <code>delegate</code> worker, <code>queueCapacity</code>,
-     * <code>workerStatsGetherer</code>, <code>dropFromHead</code> and <code>threadCount</code>.
+     * <code>dropFromHead</code>. <code>metricsPrefix</code> is set to <code>io.smartcat.berserker</code>,
+     * <code>threadCount</code> is set to <code>Runtime.getRuntime().availableProcessors()</code>,
      * <code>threadFactory</code> is set to {@link DefaultThreadFactory}.
      *
      * @param delegate Worker which is run in thread pool and to which work is delegated.
      * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
-     * @param workerStatsGetherer Consumer which receives {@link WorkerMeta} packet information.
      * @param dropFromHead If true, packet from head of the queue will be dropped, if false, packet from tail of the
      *            queue will be dropped.
-     * @param threadCount Number of thread to be used by thread pool, must be positive number.
      */
-    public AsyncWorker(Worker<T> delegate, int queueCapacity, Consumer<WorkerMeta<T>> workerStatsGetherer,
-            boolean dropFromHead, int threadCount) {
-        this(delegate, queueCapacity, workerStatsGetherer, dropFromHead, threadCount, new DefaultThreadFactory());
+    public AsyncWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead) {
+        this(delegate, queueCapacity, dropFromHead, DEFAULT_METRICS_PREFIX);
     }
 
     /**
      * Constructs asynchronous worker with specified <code>delegate</code> worker, <code>queueCapacity</code>,
-     * <code>workerStatsGetherer</code>, <code>dropFromHead</code>, <code>threadCount</code> and
-     * <code>threadFactory</code>.
+     * <code>dropFromHead</code> and <code>metricsPrefix</code>. <code>threadCount</code> is set to
+     * <code>Runtime.getRuntime().availableProcessors()</code>, <code>threadFactory</code> is set to
+     * {@link DefaultThreadFactory}.
      *
      * @param delegate Worker which is run in thread pool and to which work is delegated.
      * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
-     * @param workerStatsGetherer Consumer which receives {@link WorkerMeta} packet information.
      * @param dropFromHead If true, packet from head of the queue will be dropped, if false, packet from tail of the
      *            queue will be dropped.
+     * @param metricsPrefix Prefix for metrics.
+     */
+    public AsyncWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead, String metricsPrefix) {
+        this(delegate, queueCapacity, dropFromHead, metricsPrefix, Runtime.getRuntime().availableProcessors());
+    }
+
+    /**
+     * Constructs asynchronous worker with specified <code>delegate</code> worker, <code>queueCapacity</code>,
+     * <code>dropFromHead</code>, <code>metricsPrefix</code> and <code>threadCount</code>. <code>threadFactory</code> is
+     * set to {@link DefaultThreadFactory}.
+     *
+     * @param delegate Worker which is run in thread pool and to which work is delegated.
+     * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
+     * @param dropFromHead If true, packet from head of the queue will be dropped, if false, packet from tail of the
+     *            queue will be dropped.
+     * @param metricsPrefix Prefix for metrics.
+     * @param threadCount Number of thread to be used by thread pool, must be positive number.
+     */
+    public AsyncWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead, String metricsPrefix,
+            int threadCount) {
+        this(delegate, queueCapacity, dropFromHead, metricsPrefix, threadCount, new DefaultThreadFactory());
+    }
+
+    /**
+     * Constructs asynchronous worker with specified <code>delegate</code> worker, <code>queueCapacity</code>,
+     * <code>dropFromHead</code>, <code>metricsPrefix</code>, <code>threadCount</code> and <code>threadFactory</code>.
+     *
+     * @param delegate Worker which is run in thread pool and to which work is delegated.
+     * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
+     * @param dropFromHead If true, packet from head of the queue will be dropped, if false, packet from tail of the
+     *            queue will be dropped.
+     * @param metricsPrefix Prefix for metrics.
      * @param threadCount Number of thread to be used by thread pool, must be positive number.
      * @param threadFactory ThreadFactory to be used in creating threads for thread pool.
      */
-    public AsyncWorker(Worker<T> delegate, int queueCapacity, Consumer<WorkerMeta<T>> workerStatsGetherer,
-            boolean dropFromHead, int threadCount, ThreadFactory threadFactory) {
+    public AsyncWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead, String metricsPrefix,
+            int threadCount, ThreadFactory threadFactory) {
         if (delegate == null) {
             throw new IllegalArgumentException("Delegate cannot be null.");
         }
         if (queueCapacity <= 0) {
             throw new IllegalArgumentException("Queue capacity must be positive number.");
-        }
-        if (workerStatsGetherer == null) {
-            throw new IllegalArgumentException("Worker stats gatherer cannot be null.");
         }
         if (threadCount <= 0) {
             throw new IllegalArgumentException("Thread count must be positive number.");
@@ -117,10 +132,16 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
         if (threadFactory == null) {
             throw new IllegalArgumentException("Thread factory cannot be null.");
         }
-        this.workerStatsGetherer = workerStatsGetherer;
         this.queue = new LinkedEvictingBlockingQueue<>(dropFromHead, queueCapacity);
-        this.threadPoolExecutor = createAndInitThreadPoolExecutor(delegate, workerStatsGetherer, threadCount,
-                threadFactory);
+        this.threadPoolExecutor = createAndInitThreadPoolExecutor(delegate, threadCount, threadFactory);
+        this.metricRegistry = new MetricRegistry();
+        this.droppedMeter = metricRegistry.meter(name(metricsPrefix, DROPPED));
+        this.waitTime = metricRegistry.histogram(name(metricsPrefix, WAIT_TIME));
+        this.serviceTime = metricRegistry.histogram(name(metricsPrefix, SERVICE_TIME));
+        this.responseTIme = metricRegistry.histogram(name(metricsPrefix, RESPONSE_TIME));
+        this.generatedThroughput = metricRegistry.meter(name(metricsPrefix, GENERATED_THROUGHPUT));
+        this.processedThroughput = metricRegistry.meter(name(metricsPrefix, PROCESSED_THROUGHPUT));
+        metricRegistry.gauge(name(metricsPrefix, QUEUE_SIZE), () -> () -> queue.size());
     }
 
     @Override
@@ -131,9 +152,9 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
         DefaultWorkerMeta meta = new DefaultWorkerMeta(t);
         DefaultWorkerMeta dropped = queue.put(meta);
         if (dropped != null) {
-            dropped.markAsDropped();
-            workerStatsGetherer.accept(dropped);
+            droppedMeter.mark();
         }
+        generatedThroughput.mark();
     }
 
     @Override
@@ -144,8 +165,17 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
         }
     }
 
-    private ThreadPoolExecutor createAndInitThreadPoolExecutor(Worker<T> delegate,
-            Consumer<WorkerMeta<T>> workerStatsGetherer, int threadCount, ThreadFactory threadFactory) {
+    /**
+     * Returns metric registry this async worker is using.
+     *
+     * @return Metric registry this async worker is using.
+     */
+    public MetricRegistry getMetricRegistry() {
+        return metricRegistry;
+    }
+
+    private ThreadPoolExecutor createAndInitThreadPoolExecutor(Worker<T> delegate, int threadCount,
+            ThreadFactory threadFactory) {
         ThreadPoolExecutor result = new ThreadPoolExecutor(threadCount, threadCount, 10, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(), threadFactory);
         while (result.getPoolSize() < threadCount) {
@@ -155,16 +185,23 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
                     meta.markAsAccepted();
                     delegate.accept(meta.getPayload());
                     meta.markAsDone();
-                    workerStatsGetherer.accept(meta);
+                    waitTime.update(meta.getWaitNanoTime());
+                    serviceTime.update(meta.getServiceNanoTime());
+                    responseTIme.update(meta.getResposeNanoTime());
+                    processedThroughput.mark();
                 }
             });
         }
         return result;
     }
 
+    private String name(String metricsPrefix, String name) {
+        String prefix = metricsPrefix == null || metricsPrefix.isEmpty() ? DEFAULT_METRICS_PREFIX : metricsPrefix;
+        return MetricRegistry.name(prefix, name);
+    }
+
     /**
-     * Thread factory that creates normal priority, daemon threads with
-     * 'async-worker-thread-&lt;number&gt;' names.
+     * Thread factory that creates normal priority, daemon threads with 'async-worker-thread-&lt;number&gt;' names.
      */
     public static class DefaultThreadFactory implements ThreadFactory {
 
@@ -199,28 +236,21 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
          *
          * @return time in nanoseconds when packet was submitted to the worker thread.
          */
-        long getTimeSubmittedInNanos();
+        long getWaitNanoTime();
 
         /**
          * Returns time in nanoseconds when packet was accepted by the worker.
          *
          * @return time in nanoseconds when packet was accepted by the worker.
          */
-        long getTimeAcceptedInNanos();
+        long getServiceNanoTime();
 
         /**
          * Returns time in nanoseconds when processing was done on packet.
          *
          * @return time in nanoseconds when processing was done on packet.
          */
-        long getTimeDoneInNanos();
-
-        /**
-         * Indicates whether packet is processed or dropped.
-         *
-         * @return True if packet was dropped, otherwise false.
-         */
-        boolean isDropped();
+        long getResposeNanoTime();
     }
 
     /**
@@ -247,33 +277,24 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
             timeDoneInNanos = now();
         }
 
-        public void markAsDropped() {
-            dropped = true;
-        }
-
         @Override
         public T getPayload() {
             return payload;
         }
 
         @Override
-        public long getTimeSubmittedInNanos() {
-            return timeSubmittedInNanos;
+        public long getWaitNanoTime() {
+            return timeAcceptedInNanos - timeSubmittedInNanos;
         }
 
         @Override
-        public long getTimeAcceptedInNanos() {
-            return timeAcceptedInNanos;
+        public long getServiceNanoTime() {
+            return timeDoneInNanos - timeAcceptedInNanos;
         }
 
         @Override
-        public long getTimeDoneInNanos() {
-            return timeDoneInNanos;
-        }
-
-        @Override
-        public boolean isDropped() {
-            return dropped;
+        public long getResposeNanoTime() {
+            return timeDoneInNanos - timeSubmittedInNanos;
         }
 
         @Override
