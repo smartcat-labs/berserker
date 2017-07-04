@@ -3,22 +3,22 @@ package io.smartcat.berserker.ranger.datasource;
 import java.util.Map;
 
 import io.smartcat.berserker.api.DataSource;
-import io.smartcat.ranger.core.parser.DataGenerator;
+import io.smartcat.ranger.ObjectGenerator;
 
 /**
  * Ranger data source implementation.
  */
 public class RangerDataSource implements DataSource<Map<String, Object>> {
 
-    private final DataGenerator dataGenerator;
+    private final ObjectGenerator<Map<String, Object>> objectGenerator;
 
     /**
      * Constructs ranger data source with specified <code>aggregatedObjectGenerator</code>.
      *
-     * @param dataGenerator Generator which will be used to generate objects.
+     * @param objectGenerator Generator which will be used to generate objects.
      */
-    public RangerDataSource(DataGenerator dataGenerator) {
-        this.dataGenerator = dataGenerator;
+    public RangerDataSource(ObjectGenerator<Map<String, Object>> objectGenerator) {
+        this.objectGenerator = objectGenerator;
     }
 
     @Override
@@ -26,9 +26,8 @@ public class RangerDataSource implements DataSource<Map<String, Object>> {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Map<String, Object> getNext(long time) {
-        return (Map<String, Object>) dataGenerator.next();
+        return (Map<String, Object>) objectGenerator.next();
     }
 }
