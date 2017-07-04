@@ -14,10 +14,11 @@ import org.yaml.snakeyaml.Yaml;
 import io.smartcat.berserker.api.Worker;
 
 /**
- * Worker that publishes accepted {@link KafkaPayload}s to Kafka cluster. It uses {@link KafkaProducer} internally to
- * publish messages, producer can be configured using YAML config file containing following
- * <a href="https://kafka.apache.org/documentation/#producerconfigs">configuration properties</a>. Additionally, file
- * must contain <code>topic.name</code> property set to value of the topic to which messages will be published.
+ * Worker that publishes accepted message to Kafka cluster. Message must contain key and value. It uses
+ * {@link KafkaProducer} internally to publish messages, producer can be configured using YAML config file containing
+ * following <a href="https://kafka.apache.org/documentation/#producerconfigs">configuration properties</a>.
+ * Additionally, file must contain <code>topic.name</code> property set to value of the topic to which messages will be
+ * published.
  */
 public class KafkaWorker implements Worker<Map<String, Object>>, AutoCloseable {
 
