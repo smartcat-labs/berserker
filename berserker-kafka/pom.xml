@@ -29,10 +29,10 @@
             <artifactId>connect-api</artifactId>
             <version>${version.kafka}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-runtime</artifactId>
-            <version>${version.kafka}</version>
-        </dependency>
+<!--         <dependency> -->
+<!--             <groupId>org.apache.kafka</groupId> -->
+<!--             <artifactId>connect-runtime</artifactId> -->
+<!--             <version>${version.kafka}</version> -->
+<!--         </dependency> -->
     </dependencies>
 </project>
