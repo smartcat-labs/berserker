@@ -1,0 +1,33 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>berserker</artifactId>
+        <groupId>io.smartcat</groupId>
+        <version>0.0.7-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>berserker-cassandra</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Berserker Cassandra</name>
+    <description>Worker implementation which targets Cassandra cluster.</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <version.cassandra-driver>3.3.0</version.cassandra-driver>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.smartcat</groupId>
+            <artifactId>berserker-commons</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+            <version>${version.cassandra-driver}</version>
+        </dependency>
+    </dependencies>
+</project>
