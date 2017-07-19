@@ -72,6 +72,9 @@ List of existing modules:
 
 [Berserker Kafka](berserker-kafka) is worker implementation which sends messages to Kafka cluster.
 
+#### Berserker Cassandra
+[Berserker Cassandra](berserker-cassandra) is worker implementation which executes CQL statements on Cassandra cluster.
+
 ### Usage
 
 Berserker can be used either as a library or as a stand-alone command line tool.
