@@ -1,0 +1,35 @@
+load-generator-configuration:
+  data-source-configuration-name: Ranger
+  rate-generator-configuration-name: ConstantRateGenerator
+  worker-configuration-name: Cassandra
+  metrics-reporter-configuration-name: JMX
+  thread-count: 10
+  queue-capacity: 100000
+
+data-source-configuration:
+  values:
+    id: uuid()
+    firstName: random(['Peter', 'Mike', 'Steven', 'Joshua', 'John', 'Brandon'])
+    lastName: random(['Smith', 'Johnson', 'Williams', 'Davis', 'Jackson', 'White', 'Lewis', 'Clark'])
+    age: random(20..45)
+    email: string('{}@domain.com', randomContentString(5))
+    statement:
+      consistencyLevel: ONE
+      query: string("INSERT INTO person (id, first_name, last_name, age, email) VALUES ({}, '{}', '{}', {}, '{}');", $id, $firstName, $lastName, $age, $email)
+  output: $statement
+
+rate-generator-configuration:
+  rate: 1000
+
+worker-configuration:
+  connection-points: 0.0.0.0:32770
+  keyspace: my_keyspace
+  async: false
+  bootstrap-commands:
+    - "CREATE KEYSPACE IF NOT EXISTS my_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};"
+    - USE my_keyspace;
+    - CREATE TABLE IF NOT EXISTS person (id uuid, first_name text, last_name text, age int, email text, primary key (id));
+
+metrics-reporter-configuration:
+  domain: berserker
+  filter:

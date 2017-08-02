@@ -1,0 +1,38 @@
+load-generator-configuration:
+  data-source-configuration-name: Ranger
+  rate-generator-configuration-name: ConstantRateGenerator
+  worker-configuration-name: Kafka
+  metrics-reporter-configuration-name: SimpleConsoleReporter
+  thread-count: 4
+  queue-capacity: 1000
+
+data-source-configuration:
+  values:
+    values: circular([random(0.0..100),random(100..600),random(600..1000)])
+    tag1:
+      host: circular(['192.168.0.1', '192.168.0.2', '192.168.0.3'])
+      systemName: cassandra-cluster
+      statementType: random(["SELECT", "UPDATE"])
+    measurement:
+      name: random(['queryReport_count'], ['requestRate']
+      type: SIMPLE
+      value: $values
+      time: now()
+      timeunit: MILLISECONDS
+      tags: $tag1
+      fields:
+        dummy: string("dummy")
+    kafkaMessage:
+      key: randomContentString(10, ['A'..'Z', '0'..'9'])
+      value: json($measurement)
+
+  output: $kafkaMessage
+
+rate-generator-configuration:
+  rate: 100
+
+worker-configuration:
+  bootstrap.servers: 192.168.0.1:9092,192.168.0.2:9092,192.168.0.3:9092
+  topic.name: topic1
+
+metrics-reporter-configuration:

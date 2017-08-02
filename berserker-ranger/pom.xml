@@ -15,7 +15,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <version.ranger>0.0.8</version.ranger>
+        <version.ranger>0.0.9</version.ranger>
     </properties>
 
     <dependencies>

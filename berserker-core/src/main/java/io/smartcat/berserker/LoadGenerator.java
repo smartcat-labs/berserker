@@ -48,34 +48,38 @@ public class LoadGenerator<T> {
      * @throws IllegalStateException When run is attempted after load generator was terminated.
      */
     public void run() {
-        checkState();
-        LOGGER.info("Load generator started.");
-        long beginning = System.nanoTime();
-        long previous = beginning;
-        infiniteWhile: while (true) {
-            if (terminate.get()) {
-                LOGGER.info("Termination signal detected. Terminating load generator...");
-                break;
-            }
-            long now = System.nanoTime();
-            long fromBeginning = now - beginning;
-            long elapsed = now - previous;
-            long rate = rateGenerator.getRate(fromBeginning);
-            long normalizedRate = normalizeRate(elapsed, rate);
-            if (normalizedRate > 0) {
-                previous += calculateConsumedTime(normalizedRate, rate);
-            }
-            for (int i = 0; i < normalizedRate; i++) {
-                if (!dataSource.hasNext(fromBeginning)) {
-                    LOGGER.info("Reached end of data source. Terminating load generator...");
-                    terminate.set(true);
-                    break infiniteWhile;
+        try {
+            checkState();
+            LOGGER.info("Load generator started.");
+            long beginning = System.nanoTime();
+            long previous = beginning;
+            infiniteWhile: while (true) {
+                if (terminate.get()) {
+                    LOGGER.info("Termination signal detected. Terminating load generator...");
+                    break;
                 }
-                T data = dataSource.getNext(fromBeginning);
-                worker.accept(data);
+                long now = System.nanoTime();
+                long fromBeginning = now - beginning;
+                long elapsed = now - previous;
+                long rate = rateGenerator.getRate(fromBeginning);
+                long normalizedRate = normalizeRate(elapsed, rate);
+                if (normalizedRate > 0) {
+                    previous += calculateConsumedTime(normalizedRate, rate);
+                }
+                for (int i = 0; i < normalizedRate; i++) {
+                    if (!dataSource.hasNext(fromBeginning)) {
+                        LOGGER.info("Reached end of data source. Terminating load generator...");
+                        terminate.set(true);
+                        break infiniteWhile;
+                    }
+                    T data = dataSource.getNext(fromBeginning);
+                    worker.accept(data);
+                }
             }
+            LOGGER.info("Load generator terminated.");
+        } catch (Exception e) {
+            LOGGER.error("Terminating load generator due to error. Error: ", e);
         }
-        LOGGER.info("Load generator terminated.");
     }
 
     /**

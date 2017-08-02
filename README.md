@@ -35,25 +35,38 @@ Following section illustrates YAML configuration example.
 load-generator-configuration:
   data-source-configuration-name: Ranger
   rate-generator-configuration-name: ConstantRateGenerator
-  worker-configuration-name: Kafka
+  worker-configuration-name: Cassandra
+  metrics-reporter-configuration-name: JMX
+  thread-count: 10
+  queue-capacity: 100000
 
 data-source-configuration:
-  objectConfiguration:
-    fields:
-      -
-        name: key
-        values: Key1,Key2,Key3,Key4,Key5,Key6,Key7,Key8,Key9,Key10
-      -
-        name: value
-        values: Value1,Value2,Value3,Value4,Value5,Value6,Value7,Value8
-    numberOfObjects: 10000
+  values:
+    id: uuid()
+    firstName: random(['Peter', 'Mike', 'Steven', 'Joshua', 'John', 'Brandon'])
+    lastName: random(['Smith', 'Johnson', 'Williams', 'Davis', 'Jackson', 'White', 'Lewis', 'Clark'])
+    age: random(20..45)
+    email: string('{}@domain.com', randomLengthString(5))
+    statement:
+      consistencyLevel: ONE
+      query: string("INSERT INTO person (id, first_name, last_name, age, email) VALUES ({}, '{}', '{}', {}, '{}');", $id, $firstName, $lastName, $age, $email)
+  output: $statement
 
 rate-generator-configuration:
   rate: 1000
 
 worker-configuration:
-  bootstrap.servers: 192.168.1.1:9092,192.168.1.2:9092,192.168.1.3:9092
-  topic.name: test-topic
+  connection-points: 0.0.0.0:32770
+  keyspace: my_keyspace
+  async: false
+  bootstrap-commands:
+    - "CREATE KEYSPACE IF NOT EXISTS my_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};"
+    - USE my_keyspace;
+    - CREATE TABLE IF NOT EXISTS person (id uuid, first_name text, last_name text, age int, email text, primary key (id));
+
+metrics-reporter-configuration:
+  domain: berserker
+  filter:
 ```
 
 Main part of configuration is `load-generator-configuration` where concrete modules which will be used for data source, rate generator and worker need to be specified. After `load-generator-configuration` section, there should be exactly one section for data source, rate generator and worker.
@@ -105,8 +118,7 @@ Add the `dependency` element to your `<dependencies>` section in `pom.xml` depen
 
 #### Command line tool usage
 
-Download [Berserker Runner](https://bintray.com/smartcat-labs/maven/download_file?file_path=io%2Fsmartcat%2Franger-runner%2F0.0.5%2Franger-runner-0.0.5.jar).
-
-Run following command: `java -jar berserker-runner-0.0.5.jar -c <path_to_config_file>`
-
-For more info on configuration file, see [Berserker Runner](#berserker-runner) section.
+- Download latest [Berserker Runner](https://bintray.com/smartcat-labs/maven/berserker) version.
+- Create config file (example can be found [here](berserker-runner/src/example/resources/ranger-cassandra.yml)).
+- Run following command: `java -jar berserker-runner-<version>.jar -c <path_to_config_file>`
+- If you need to specify logging options, you can run berserker this way: `java -jar -Dlogback.configurationFile=<path to logback.xml> berserker-runner-<version>.jar -c <path_to_config_file>`

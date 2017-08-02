@@ -14,26 +14,6 @@ public class LoadGeneratorTest {
 
     private static final long DEFAULT_TEST_TIMEOUT = 3000;
 
-    @Test(expected = IllegalStateException.class)
-    public void run_should_throw_exception_when_loadGenerator_is_already_terminated() {
-        // GIVEN
-        LoadGenerator<Integer> loadGenerator = new LoadGenerator<>(new RandomIntDataSource(),
-                new ConstantRateGenerator(1000), new NullWorker<>());
-        runInBackground(() -> {
-            loadGenerator.run();
-        });
-        wait(500);
-
-        loadGenerator.terminate();
-        wait(500);
-
-        // WHEN
-        loadGenerator.run();
-
-        // THEN
-        // Exception should be thrown
-    }
-
     @Test(timeout = DEFAULT_TEST_TIMEOUT)
     public void loadGenerator_should_be_terminated_when_terminate_signal_is_sent() {
         // GIVEN

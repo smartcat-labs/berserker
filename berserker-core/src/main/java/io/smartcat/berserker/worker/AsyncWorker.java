@@ -6,6 +6,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -23,6 +26,7 @@ import io.smartcat.berserker.util.LinkedEvictingBlockingQueue;
  */
 public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncWorker.class);
     private static final String DEFAULT_METRICS_PREFIX = "io.smartcat.berserker";
     private static final String DROPPED = "dropped";
     private static final String WAIT_TIME = "waitTime";
@@ -181,14 +185,19 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
         while (result.getPoolSize() < threadCount) {
             result.submit(() -> {
                 while (true) {
-                    DefaultWorkerMeta meta = queue.take();
-                    meta.markAsAccepted();
-                    delegate.accept(meta.getPayload());
-                    meta.markAsDone();
-                    waitTime.update(meta.getWaitNanoTime());
-                    serviceTime.update(meta.getServiceNanoTime());
-                    responseTIme.update(meta.getResposeNanoTime());
-                    processedThroughput.mark();
+                    try {
+                        DefaultWorkerMeta meta = queue.take();
+                        meta.markAsAccepted();
+                        delegate.accept(meta.getPayload());
+                        meta.markAsDone();
+                        waitTime.update(meta.getWaitNanoTime());
+                        serviceTime.update(meta.getServiceNanoTime());
+                        responseTIme.update(meta.getResposeNanoTime());
+                        processedThroughput.mark();
+                    } catch (Exception e) {
+                        String workerName = delegate.getClass().getName();
+                        LOGGER.error("Error while accepting payload at worker: " + workerName + ". Error: ", e);
+                    }
                 }
             });
         }
