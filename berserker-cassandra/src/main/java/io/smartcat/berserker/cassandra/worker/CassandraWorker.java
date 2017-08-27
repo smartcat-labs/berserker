@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Cluster.Builder;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.RegularStatement;
 import com.datastax.driver.core.Session;
@@ -35,6 +36,7 @@ public class CassandraWorker implements Worker<Map<String, Object>> {
      * Constructs Cassandra worker with specified properties.
      *
      * @param connectionPointsWithPorts List of connection points to use.
+     * @param useSSL Enable ssl for connection.
      * @param keyspace Name of keyspace in database to use.
      * @param async Indicates whether statements will be executed synchronously or asynchronously.
      * @param bootstrapDDLCommands List of CQL commands to execute only once after connection to Cassandra cluster is
@@ -42,15 +44,22 @@ public class CassandraWorker implements Worker<Map<String, Object>> {
      * @param prepStatements List of prepared statements to create. Each statement is defined with id and can be
      *            referenced from {@link #accept(Map)} method.
      */
-    public CassandraWorker(List<InetSocketAddress> connectionPointsWithPorts, String keyspace, boolean async,
-            List<String> bootstrapDDLCommands, List<PreparedStatement> prepStatements) {
+    public CassandraWorker(List<InetSocketAddress> connectionPointsWithPorts, boolean useSSL, String keyspace,
+            boolean async, List<String> bootstrapDDLCommands, List<PreparedStatement> prepStatements) {
         if (connectionPointsWithPorts == null || connectionPointsWithPorts.isEmpty()) {
             throw new IllegalArgumentException("List of connection points with ports cannot be null nor empty");
         }
         if (keyspace == null || keyspace.isEmpty()) {
             throw new IllegalArgumentException("Keyspace cannot be null nor empty.");
         }
-        cluster = Cluster.builder().addContactPointsWithPorts(connectionPointsWithPorts).build();
+
+        Builder builder = Cluster.builder().addContactPointsWithPorts(connectionPointsWithPorts);
+
+        if (useSSL) {
+            builder = builder.withSSL();
+        }
+
+        cluster = builder.build();
         session = cluster.connect();
         if (bootstrapDDLCommands != null) {
             for (String command : bootstrapDDLCommands) {

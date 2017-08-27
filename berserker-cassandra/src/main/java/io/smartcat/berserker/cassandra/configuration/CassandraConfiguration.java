@@ -36,6 +36,7 @@ import io.smartcat.berserker.configuration.WorkerConfiguration;
 public class CassandraConfiguration implements WorkerConfiguration {
 
     private static final String CONNECTION_POINTS = "connection-points";
+    private static final String USE_SSL = "use-ssl";
     private static final String KEYSPACE = "keyspace";
     private static final String ASYNC = "async";
     private static final String BOOTSTRAP_COMMANDS = "bootstrap-commands";
@@ -49,11 +50,24 @@ public class CassandraConfiguration implements WorkerConfiguration {
     @Override
     public Worker<?> getWorker(Map<String, Object> configuration) throws ConfigurationParseException {
         List<InetSocketAddress> connectionPointsWithPorts = getConnectionPointsWithPorts(configuration);
+        boolean useSSL = isConnectionSSLEnabled(configuration);
         String keyspace = getKeyspace(configuration);
         boolean async = getAsync(configuration);
         List<String> bootstrapDDLCommands = getBootstrapDDLCommands(configuration);
         List<PreparedStatement> prepStatements = getPreparedStatements(configuration);
-        return new CassandraWorker(connectionPointsWithPorts, keyspace, async, bootstrapDDLCommands, prepStatements);
+        return new CassandraWorker(connectionPointsWithPorts, useSSL, keyspace, async, bootstrapDDLCommands,
+            prepStatements);
+    }
+
+    private boolean isConnectionSSLEnabled(Map<String, Object> configuration) {
+        Object isEnabled = configuration.get(USE_SSL);
+        if (isEnabled == null) {
+            return false;
+        }
+        if (isEnabled instanceof Boolean) {
+            return (Boolean) isEnabled;
+        }
+        throw new RuntimeException(USE_SSL + " value must be either true or false");
     }
 
     private List<InetSocketAddress> getConnectionPointsWithPorts(Map<String, Object> configuration) {
