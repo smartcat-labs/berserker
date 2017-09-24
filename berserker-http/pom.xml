@@ -1,0 +1,33 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>berserker</artifactId>
+        <groupId>io.smartcat</groupId>
+        <version>0.0.8-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>berserker-http</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Berserker HTTP</name>
+    <description>Worker implementation which sends HTTP requests.</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <version.httpclient>4.5.3</version.httpclient>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.smartcat</groupId>
+            <artifactId>berserker-commons</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${version.httpclient}</version>
+        </dependency>
+    </dependencies>
+</project>
