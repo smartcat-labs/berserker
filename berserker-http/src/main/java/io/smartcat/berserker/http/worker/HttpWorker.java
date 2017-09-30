@@ -152,29 +152,27 @@ public class HttpWorker implements Worker<Map<String, Object>> {
 
     private HttpUriRequest createRequest(String methodType, String url, String body)
             throws UnsupportedEncodingException {
-        if (methodType.equals(GET)) {
-            return new HttpGet(url);
+        switch (methodType) {
+            case GET:
+                return new HttpGet(url);
+            case POST:
+                HttpPost postRequest = new HttpPost(url);
+                if (body != null) {
+                    postRequest.setEntity(new ByteArrayEntity(body.getBytes()));
+                }
+                return postRequest;
+            case PUT:
+                HttpPut putRequest = new HttpPut(url);
+                if (body != null) {
+                    putRequest.setEntity(new ByteArrayEntity(body.getBytes()));
+                }
+                return putRequest;
+            case DELETE:
+                return new HttpDelete(url);
+            case HEAD:
+                return new HttpHead(url);
+            default:
+                throw new RuntimeException("Unsupported method type: " + methodType);
         }
-        if (methodType.equals(POST)) {
-            HttpPost request = new HttpPost(url);
-            if (body != null) {
-                request.setEntity(new ByteArrayEntity(body.getBytes()));
-            }
-            return request;
-        }
-        if (methodType.equals(PUT)) {
-            HttpPut request = new HttpPut(url);
-            if (body != null) {
-                request.setEntity(new ByteArrayEntity(body.getBytes()));
-            }
-            return request;
-        }
-        if (methodType.equals(DELETE)) {
-            return new HttpDelete(url);
-        }
-        if (methodType.equals(HEAD)) {
-            return new HttpHead(url);
-        }
-        throw new RuntimeException();
     }
 }
