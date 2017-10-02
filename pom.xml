@@ -17,6 +17,7 @@
         <module>berserker-ranger</module>
         <module>berserker-kafka</module>
         <module>berserker-cassandra</module>
+        <module>berserker-http</module>
         <module>berserker-runner</module>
     </modules>
 

@@ -1,0 +1,67 @@
+load-generator-configuration:
+  data-source-configuration-name: Ranger
+  rate-generator-configuration-name: ConstantRateGenerator
+  worker-configuration-name: HTTP
+  metrics-reporter-configuration-name: JMX
+  thread-count: 10
+  queue-capacity: 100000
+
+# This example configuration each time generates randomly 1 of 5 possible types of HTTP requests:
+# 1. GET on http://localhost:8080/api/item/count
+# 2. GET on http://localhost:8080/api/item/$id - where id is random number from 1 to 100
+# 3. POST on http://localhost:8080/api/item/new with content-type header and JSON payload
+# 4. PUT on http://localhost:8080/api/item/$id - with content-type header and JSON payload where id is random number from 201 to 300
+# 5. DELETE on http://localhost:8080/api/item/$id - where id is random number from 301 to 400
+#
+# Note that each request can either have url or url-sufix, they are mutually exclusive. url-sufix is possible only if worker configuration
+# contains base-url property defined.
+# Headers defined on configuration level will be overridden with headers defined on request level.
+
+data-source-configuration:
+  values:
+    getCountRequest:
+      url-sufix: /count
+      method-type: GET
+    getItemRequest:
+      url: string("http://localhost:8080/api/item/{}", random(1..100))
+      method-type: GET
+    postItemRequestData:
+      id: random(101..200)
+      value: string("Val {}", $id)
+    postItemRequest:
+      url-sufix: /new
+      method-type: POST
+      body: json($postItemRequestData)
+      headers:
+        Content-Type: application/json
+        X-Custom-Header-1: new-val-1
+        X-Custom-Header-3: val-3
+    putItemRequestData:
+      id: random(201..300)
+      value: string("Val {}", $id)
+    putItemRequest:
+      url-sufix: string("/{}", $putItemRequestData.id)
+      method-type: PUT
+      body: json($putItemRequestData)
+      headers:
+        Content-Type: application/json
+        X-Custom-Header-1: new-val-1
+        X-Custom-Header-3: val-3
+    deleteItemRequest:
+      url-sufix: string("/{}", random(301..400))
+      method-type: DELETE
+  output: random([$getCountRequest, $getItemRequest, $postItemRequest, $putItemRequest, $deleteItemRequest])
+
+rate-generator-configuration:
+  rate: 50000
+
+worker-configuration:
+  base-url: http://localhost:8080/api/item
+  headers:
+    X-Custom-Header-1: val-1
+    X-Custom-Header-2: val-2
+  
+
+metrics-reporter-configuration:
+  domain: berserker
+  filter:
