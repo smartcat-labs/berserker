@@ -6,8 +6,8 @@ package io.smartcat.berserker.rategenerator;
 public class SquareRateGenerator extends PeriodicRateGenerator {
 
     private final double leftSide;
-    private final long lowerValue;
-    private final long upperValue;
+    private final double lowerValue;
+    private final double upperValue;
 
     /**
      * Constructs rate generator with specified <code>periodInSeconds</code>, <code>leftSide</code>,
@@ -19,7 +19,7 @@ public class SquareRateGenerator extends PeriodicRateGenerator {
      * @param lowerValue Lower value of the square function, must be positive number.
      * @param upperValue Upper value of the square function, must be positive number.
      */
-    public SquareRateGenerator(long periodInSeconds, double leftSide, long lowerValue, long upperValue) {
+    public SquareRateGenerator(long periodInSeconds, double leftSide, double lowerValue, double upperValue) {
         super(periodInSeconds);
         if (leftSide < 0 || leftSide >= 1) {
             throw new IllegalArgumentException("Left side must be in range [0,1).");
@@ -36,7 +36,7 @@ public class SquareRateGenerator extends PeriodicRateGenerator {
     }
 
     @Override
-    protected long rateFunction(double value) {
-        return Math.round(value < leftSide ? lowerValue : upperValue);
+    protected double rateFunction(double value) {
+        return value < leftSide ? lowerValue : upperValue;
     }
 }

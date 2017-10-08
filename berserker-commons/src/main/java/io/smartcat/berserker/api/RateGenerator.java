@@ -11,5 +11,5 @@ public interface RateGenerator {
      * @param time Relative time in nanoseconds from starting load generator.
      * @return Rate per second as a function of time.
      */
-    long getRate(long time);
+    double getRate(long time);
 }

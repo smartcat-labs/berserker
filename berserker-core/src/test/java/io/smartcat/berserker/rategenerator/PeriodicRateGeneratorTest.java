@@ -1,11 +1,13 @@
 package io.smartcat.berserker.rategenerator;
 
-import java.util.concurrent.TimeUnit;
-
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.TimeUnit;
+
 public class PeriodicRateGeneratorTest {
+
+    private static final double DELTA = 0.001d;
 
     @Test
     public void rate_should_return_1_when_period_is_100_and_time_is_201() {
@@ -13,10 +15,10 @@ public class PeriodicRateGeneratorTest {
         ConcretePeriodicRateGenerator periodicRateGenerator = new ConcretePeriodicRateGenerator(100);
 
         // WHEN
-        long rate = periodicRateGenerator.getRate(TimeUnit.SECONDS.toNanos(201));
+        double rate = periodicRateGenerator.getRate(TimeUnit.SECONDS.toNanos(201));
 
         // THEN
-        Assert.assertEquals(1, rate);
+        Assert.assertEquals(1d, rate, DELTA);
     }
 
     @Test
@@ -25,10 +27,10 @@ public class PeriodicRateGeneratorTest {
         ConcretePeriodicRateGenerator periodicRateGenerator = new ConcretePeriodicRateGenerator(50);
 
         // WHEN
-        long rate = periodicRateGenerator.getRate(TimeUnit.SECONDS.toNanos(150));
+        double rate = periodicRateGenerator.getRate(TimeUnit.SECONDS.toNanos(150));
 
         // THEN
-        Assert.assertEquals(0, rate);
+        Assert.assertEquals(0d, rate, DELTA);
     }
 
     @Test
@@ -37,10 +39,10 @@ public class PeriodicRateGeneratorTest {
         ConcretePeriodicRateGenerator periodicRateGenerator = new ConcretePeriodicRateGenerator(10);
 
         // WHEN
-        long rate = periodicRateGenerator.getRate(TimeUnit.SECONDS.toNanos(16));
+        double rate = periodicRateGenerator.getRate(TimeUnit.SECONDS.toNanos(16));
 
         // THEN
-        Assert.assertEquals(60, rate);
+        Assert.assertEquals(60d, rate, DELTA);
     }
 
     @Test
@@ -49,10 +51,10 @@ public class PeriodicRateGeneratorTest {
         ConcretePeriodicRateGenerator periodicRateGenerator = new ConcretePeriodicRateGenerator(100);
 
         // WHEN
-        long rate = periodicRateGenerator.getRate(TimeUnit.SECONDS.toNanos(399));
+        double rate = periodicRateGenerator.getRate(TimeUnit.SECONDS.toNanos(399));
 
         // THEN
-        Assert.assertEquals(99, rate);
+        Assert.assertEquals(99d, rate, DELTA);
     }
 
     private class ConcretePeriodicRateGenerator extends PeriodicRateGenerator {
@@ -62,8 +64,8 @@ public class PeriodicRateGeneratorTest {
         }
 
         @Override
-        protected long rateFunction(double value) {
-            return Math.round(value * 100);
+        protected double rateFunction(double value) {
+            return value * 100;
         }
     }
 }

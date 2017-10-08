@@ -14,7 +14,10 @@ public abstract class PeriodicRateGenerator implements RateGenerator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicRateGenerator.class);
 
-    private final long periodInNanos;
+    /**
+     * Duration of the period in nano seconds.
+     */
+    protected final long periodInNanos;
 
     /**
      * Constructs rate generator with specified <code>periodInSeconds</code>.
@@ -29,11 +32,11 @@ public abstract class PeriodicRateGenerator implements RateGenerator {
     }
 
     @Override
-    public long getRate(long time) {
+    public double getRate(long time) {
         double valueInPeriod = normalizeValue(time);
-        long result = rateFunction(valueInPeriod);
+        double result = rateFunction(valueInPeriod);
         LOGGER.trace("rateFunction returned: {} for value: {}", result, valueInPeriod);
-        return result < 0 ? 0 : result;
+        return result < 0 ? 0d : result;
     }
 
     /**
@@ -43,7 +46,7 @@ public abstract class PeriodicRateGenerator implements RateGenerator {
      *            [0,1).
      * @return Rate for this {@link PeriodicRateGenerator} implementation.
      */
-    protected abstract long rateFunction(double value);
+    protected abstract double rateFunction(double value);
 
     private double normalizeValue(long time) {
         long rangeValue = time % periodInNanos;

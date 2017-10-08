@@ -37,11 +37,11 @@ public class TriangleRateGenerator extends PeriodicRateGenerator {
     }
 
     @Override
-    protected long rateFunction(double value) {
+    protected double rateFunction(double value) {
         if (value < leftSide) {
-            return Math.round((maxValue * value / leftSide) + minValue);
+            return ((maxValue - minValue) * value / leftSide) + minValue;
         } else {
-            return Math.round((maxValue * (1 - value) / (1 - leftSide)) + minValue);
+            return ((maxValue - minValue) * (1 - value) / (1 - leftSide)) + minValue;
         }
     }
 }

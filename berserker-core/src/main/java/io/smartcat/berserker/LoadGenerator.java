@@ -61,7 +61,7 @@ public class LoadGenerator<T> {
                 long now = System.nanoTime();
                 long fromBeginning = now - beginning;
                 long elapsed = now - previous;
-                long rate = rateGenerator.getRate(fromBeginning);
+                double rate = rateGenerator.getRate(fromBeginning);
                 long normalizedRate = normalizeRate(elapsed, rate);
                 if (normalizedRate > 0) {
                     previous += calculateConsumedTime(normalizedRate, rate);
@@ -96,14 +96,14 @@ public class LoadGenerator<T> {
         }
     }
 
-    private long normalizeRate(long elapsed, long rate) {
+    private long normalizeRate(long elapsed, double rate) {
         if (elapsed < TICK_PERIOD_IN_NANOS) {
             return 0;
         }
-        return elapsed * rate / NANOS_IN_SECOND;
+        return (long) (elapsed * rate / NANOS_IN_SECOND);
     }
 
-    private long calculateConsumedTime(long normalizedRate, long rate) {
-        return normalizedRate * NANOS_IN_SECOND / rate;
+    private long calculateConsumedTime(long normalizedRate, double rate) {
+        return (long) (normalizedRate * NANOS_IN_SECOND / rate);
     }
 }

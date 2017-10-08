@@ -5,8 +5,8 @@ package io.smartcat.berserker.rategenerator;
  */
 public class SineRateGenerator extends PeriodicRateGenerator {
 
-    private final long multiplier;
-    private final long independentConstant;
+    private final double multiplier;
+    private final double independentConstant;
 
     /**
      * Constructs rate generator with specified <code>periodInSeconds</code>, <code>multiplier</code> and
@@ -16,7 +16,7 @@ public class SineRateGenerator extends PeriodicRateGenerator {
      * @param multiplier Multiplies result of sine function.
      * @param independentConstant Adds to the result of multiplied sine function, must be positive number.
      */
-    public SineRateGenerator(long periodInSeconds, long multiplier, long independentConstant) {
+    public SineRateGenerator(long periodInSeconds, double multiplier, double independentConstant) {
         super(periodInSeconds);
         if (independentConstant <= 0) {
             throw new IllegalArgumentException("Independent constant must be positive number.");
@@ -26,7 +26,7 @@ public class SineRateGenerator extends PeriodicRateGenerator {
     }
 
     @Override
-    protected long rateFunction(double value) {
-        return Math.round(Math.sin(value * 2 * Math.PI) * multiplier) + independentConstant;
+    protected double rateFunction(double value) {
+        return Math.sin(value * 2 * Math.PI) * multiplier + independentConstant;
     }
 }

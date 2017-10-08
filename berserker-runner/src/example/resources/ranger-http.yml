@@ -1,6 +1,6 @@
 load-generator-configuration:
   data-source-configuration-name: Ranger
-  rate-generator-configuration-name: ConstantRateGenerator
+  rate-generator-configuration-name: default
   worker-configuration-name: HTTP
   metrics-reporter-configuration-name: JMX
   thread-count: 10
@@ -53,7 +53,9 @@ data-source-configuration:
   output: random([$getCountRequest, $getItemRequest, $postItemRequest, $putItemRequest, $deleteItemRequest])
 
 rate-generator-configuration:
-  rate: 50000
+  rates:
+      r: 50000
+    output: $r
 
 worker-configuration:
   base-url: http://localhost:8080/api/item
