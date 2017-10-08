@@ -1,6 +1,6 @@
 load-generator-configuration:
   data-source-configuration-name: Ranger
-  rate-generator-configuration-name: ConstantRateGenerator
+  rate-generator-configuration-name: default
   worker-configuration-name: Kafka
   metrics-reporter-configuration-name: SimpleConsoleReporter
   thread-count: 4
@@ -29,7 +29,9 @@ data-source-configuration:
   output: $kafkaMessage
 
 rate-generator-configuration:
-  rate: 100
+  rates:
+    r: 100
+  output: $r
 
 worker-configuration:
   bootstrap.servers: 192.168.0.1:9092,192.168.0.2:9092,192.168.0.3:9092

@@ -1,6 +1,6 @@
 load-generator-configuration:
   data-source-configuration-name: Ranger
-  rate-generator-configuration-name: ConstantRateGenerator
+  rate-generator-configuration-name: default
   worker-configuration-name: Cassandra
   metrics-reporter-configuration-name: JMX
   thread-count: 10
@@ -19,7 +19,9 @@ data-source-configuration:
   output: $statement
 
 rate-generator-configuration:
-  rate: 1000
+  rates:
+    r: 1000
+  output: $r
 
 worker-configuration:
   connection-points: 0.0.0.0:32770

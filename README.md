@@ -34,7 +34,7 @@ Following section illustrates YAML configuration example.
 ```yaml
 load-generator-configuration:
   data-source-configuration-name: Ranger
-  rate-generator-configuration-name: ConstantRateGenerator
+  rate-generator-configuration-name: default
   worker-configuration-name: Cassandra
   metrics-reporter-configuration-name: JMX
   thread-count: 10
@@ -53,7 +53,9 @@ data-source-configuration:
   output: $statement
 
 rate-generator-configuration:
-  rate: 1000
+  rates:
+    r: 1000
+  output: $r
 
 worker-configuration:
   connection-points: 0.0.0.0:32770
@@ -72,6 +74,10 @@ metrics-reporter-configuration:
 Main part of configuration is `load-generator-configuration` where concrete modules which will be used for data source, rate generator and worker need to be specified. After `load-generator-configuration` section, there should be exactly one section for data source, rate generator and worker.
 Each section is allowed to contain module specific configuration as configuration interpretation will be done by module itself.
 In order for berserker-runner to be able to find particular module, each module jar must be in classpath.
+
+#### Rate generator configuration
+
+Documentation on rate generator configuration can be found [here](rate-generator-configuration.md).
 
 ### Modules
 

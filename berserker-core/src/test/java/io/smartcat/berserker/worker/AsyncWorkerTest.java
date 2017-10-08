@@ -69,9 +69,11 @@ public class AsyncWorkerTest {
         // GIVEN
         RateGenerator rg = new ConstantRateGenerator(10);
         CountDownLatch countDownLatch = new CountDownLatch(6);
+        CountDownLatch dsCountDownLatch = new CountDownLatch(3);
         Object lock = new Object();
         AtomicInteger delegateInvokeCount = new AtomicInteger();
         Worker<Integer> delegate = (x) -> {
+            dsCountDownLatch.countDown();
             synchronized (lock) {
                 delegateInvokeCount.addAndGet(x);
                 countDownLatch.countDown();
@@ -88,6 +90,12 @@ public class AsyncWorkerTest {
 
             @Override
             public Integer getNext(long time) {
+                if (i == 4) {
+                    try {
+                        dsCountDownLatch.await();
+                    } catch (InterruptedException e) {
+                    }
+                }
                 return i++;
             }
         };
@@ -118,9 +126,11 @@ public class AsyncWorkerTest {
         // GIVEN
         RateGenerator rg = new ConstantRateGenerator(10);
         CountDownLatch countDownLatch = new CountDownLatch(6);
+        CountDownLatch dsCountDownLatch = new CountDownLatch(3);
         Object lock = new Object();
         AtomicInteger delegateInvokeCount = new AtomicInteger();
         Worker<Integer> delegate = (x) -> {
+            dsCountDownLatch.countDown();
             synchronized (lock) {
                 delegateInvokeCount.addAndGet(x);
                 countDownLatch.countDown();
@@ -137,6 +147,12 @@ public class AsyncWorkerTest {
 
             @Override
             public Integer getNext(long time) {
+                if (i == 4) {
+                    try {
+                        dsCountDownLatch.await();
+                    } catch (InterruptedException e) {
+                    }
+                }
                 return i++;
             }
         };

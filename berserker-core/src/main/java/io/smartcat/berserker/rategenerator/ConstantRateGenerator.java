@@ -7,14 +7,14 @@ import io.smartcat.berserker.api.RateGenerator;
  */
 public class ConstantRateGenerator implements RateGenerator {
 
-    private final long perSecondRate;
+    private final double perSecondRate;
 
     /**
      * Constructs rate generator with specified <code>perSecondRate</code>.
      *
      * @param perSecondRate Rate of the rate generator per second, must be positive number.
      */
-    public ConstantRateGenerator(long perSecondRate) {
+    public ConstantRateGenerator(double perSecondRate) {
         if (perSecondRate <= 0) {
             throw new IllegalArgumentException("Rate must be positive number.");
         }
@@ -22,7 +22,7 @@ public class ConstantRateGenerator implements RateGenerator {
     }
 
     @Override
-    public long getRate(long time) {
+    public double getRate(long time) {
         return perSecondRate;
     }
 }

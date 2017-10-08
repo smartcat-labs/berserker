@@ -57,8 +57,18 @@ public class LoadGeneratorTest {
     }
 
     @Test
+    public void worker_should_be_invoked_2000_times_when_loadGenerator_works_10_sec_with_rate_of_200() {
+        testRateAndCountOfInvocation(10, 200);
+    }
+
+    @Test
     public void worker_should_be_invoked_200_000_times_when_loadGenerator_works_20_sec_with_rate_of_10_000() {
         testRateAndCountOfInvocation(20, 10_000);
+    }
+
+    @Test
+    public void worker_should_be_invoked_3015_times_when_loadGenerator_works_30_sec_with_rate_of_100_point_5() {
+        testRateAndCountOfInvocation(30, 100.5);
     }
 
     @Test
@@ -66,7 +76,7 @@ public class LoadGeneratorTest {
         testRateAndCountOfInvocation(30, 10_000_000);
     }
 
-    private void testRateAndCountOfInvocation(int numOfSeconds, long rate) {
+    private void testRateAndCountOfInvocation(int numOfSeconds, double rate) {
         // GIVEN
         double tolerance = 0.005;
         final AtomicLong numOfInvoked = new AtomicLong(0);
