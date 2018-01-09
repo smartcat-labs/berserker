@@ -97,6 +97,9 @@ List of existing modules:
 #### Berserker HTTP
 [Berserker HTTP](berserker-http) is worker implementation which sends HTTP request on configured endpoint.
 
+#### Berserker RabbitMQ
+[Berserker RabbitMQ](berserker-rabbitmq) is worker implementation which sends AMQP messages to RabbitMQ.
+
 ### Usage
 
 Berserker can be used either as a library or as a stand-alone command line tool.

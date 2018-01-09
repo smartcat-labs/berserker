@@ -1,0 +1,61 @@
+load-generator-configuration:
+  data-source-configuration-name: Ranger
+  rate-generator-configuration-name: default
+  worker-configuration-name: RabbitMQ
+  metrics-reporter-configuration-name: JMX
+  thread-count: 10
+  queue-capacity: 100000
+
+# RabbitMQ worker expects object with following properties, all are RabbitMQ common properties:
+# 1. exchangeName (String) - Mandatory
+# 2. routingKey (String) - Mandatory
+# 3. messageContent (String) - Mandatory
+# 4. contentType - (String) - Optional
+# 5. contentEncoding - (String) - Optional
+# 6. headers - (Map) - Optional
+# 7. deliveryMode - (Integer) - Optional
+# 8. priority - (Integer) - Optional
+# 9. correlationId - (String) - Optional
+# 10. replyTo - (String) - Optional
+# 11. expiration - (String) - Optional
+# 12. messageId - (String) - Optional
+# 13. timestamp - (Date) - Optional
+# 14. type - (String) - Optional
+# 15. userId - (String) - Optional
+# 16. appId - (String) - Optional
+# 17. clusterId - (String) - Optional
+
+data-source-configuration:
+  values:
+    message:
+      id: uuid()
+      value: random(1..100)
+    rabbitMessage:
+      exchangeName: testExchange
+      routingKey: test
+      messageContent: json($message)
+      priority: 0
+      delivery_mode: 2
+      headers:
+        contentType: text/json
+        routing-key: test
+      contentType: text/json
+  output: $rabbitMessage
+
+rate-generator-configuration:
+  rates:
+    r: 100
+  output: $r
+
+# Configuration defines common properties necessary to create ConnectionFactory
+
+worker-configuration:
+  username: test
+  password: test
+  host: localhost
+  port: 5672
+  virtual-host: /rabbitmq_test
+
+metrics-reporter-configuration:
+  domain: berserker
+  filter:

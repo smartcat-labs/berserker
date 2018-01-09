@@ -18,6 +18,7 @@
         <module>berserker-kafka</module>
         <module>berserker-cassandra</module>
         <module>berserker-http</module>
+        <module>berserker-rabbitmq</module>
         <module>berserker-runner</module>
     </modules>
 
