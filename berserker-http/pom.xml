@@ -15,7 +15,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <version.httpclient>4.5.3</version.httpclient>
+        <version.async-http-client>2.1.0-alpha26</version.async-http-client>
     </properties>
 
     <dependencies>
@@ -25,9 +25,9 @@
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${version.httpclient}</version>
+            <groupId>org.asynchttpclient</groupId>
+            <artifactId>async-http-client</artifactId>
+            <version>${version.async-http-client}</version>
         </dependency>
     </dependencies>
 </project>

@@ -64,6 +64,7 @@
         <version.metrics-core>3.2.2</version.metrics-core>
         <version.junit>4.12</version.junit>
         <version.pitest>1.1.11</version.pitest>
+        <version.netty>4.1.17.Final</version.netty>
         <source.level>1.8</source.level>
         <code.level>1.8</code.level>
         <version.plugin.compiler>3.5.1</version.plugin.compiler>
@@ -120,7 +121,11 @@
                 <artifactId>metrics-core</artifactId>
                 <version>${version.metrics-core}</version>
             </dependency>
-
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${version.netty}</version>
+            </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>

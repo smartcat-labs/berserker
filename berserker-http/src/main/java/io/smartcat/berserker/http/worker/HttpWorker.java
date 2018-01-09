@@ -1,22 +1,13 @@
 package io.smartcat.berserker.http.worker;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
+import static org.asynchttpclient.Dsl.*;
 
+import org.asynchttpclient.*;
 import io.smartcat.berserker.api.Worker;
 
 /**
@@ -39,6 +30,8 @@ public class HttpWorker implements Worker<Map<String, Object>> {
     private final String baseUrl;
     private final Map<String, String> headers;
 
+    private AsyncHttpClient asyncHttpClient;
+
     /**
      * Constructs HTTP worker with specified properties.
      *
@@ -48,6 +41,9 @@ public class HttpWorker implements Worker<Map<String, Object>> {
     public HttpWorker(String baseUrl, Map<String, String> headers) {
         this.baseUrl = baseUrl;
         this.headers = headers;
+
+        AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
+        asyncHttpClient = new DefaultAsyncHttpClient(config);
     }
 
     /**
@@ -77,14 +73,19 @@ public class HttpWorker implements Worker<Map<String, Object>> {
         String calculatedUrl = getCalculatedUrl(url, urlSufix);
         Map<String, String> calculatedHeaders = getCalculatedHeaders(requestHeaders);
 
-        try {
-            HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpUriRequest request = createRequest(methodType, calculatedUrl, body);
-            calculatedHeaders.forEach((k, v) -> request.addHeader(k, v));
-            httpClient.execute(request);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        asyncHttpClient.executeRequest(
+                createRequest(methodType, calculatedUrl, calculatedHeaders, body),
+                new AsyncCompletionHandler<Response>() {
+                    @Override
+                    public Response onCompleted(Response response) throws Exception {
+                        return response;
+                    }
+
+                    @Override
+                    public void onThrowable(Throwable t) {
+                        throw new RuntimeException(t);
+                    }
+                });
     }
 
     @SuppressWarnings("unchecked")
@@ -150,29 +151,35 @@ public class HttpWorker implements Worker<Map<String, Object>> {
         return result;
     }
 
-    private HttpUriRequest createRequest(String methodType, String url, String body)
-            throws UnsupportedEncodingException {
+    private Request createRequest(String methodType, String url, Map<String, String> requestHeaders, String body) {
+        final RequestBuilder request;
+
         switch (methodType) {
             case GET:
-                return new HttpGet(url);
+                request = get(url);
+                break;
             case POST:
-                HttpPost postRequest = new HttpPost(url);
+                request = post(url);
                 if (body != null) {
-                    postRequest.setEntity(new ByteArrayEntity(body.getBytes()));
+                    request.setBody(body.getBytes());
                 }
-                return postRequest;
+                break;
             case PUT:
-                HttpPut putRequest = new HttpPut(url);
+                request = put(url);
                 if (body != null) {
-                    putRequest.setEntity(new ByteArrayEntity(body.getBytes()));
+                    request.setBody(body.getBytes());
                 }
-                return putRequest;
+                break;
             case DELETE:
-                return new HttpDelete(url);
+                request = delete(url);
+                break;
             case HEAD:
-                return new HttpHead(url);
+                request = head(url);
+                break;
             default:
                 throw new RuntimeException("Unsupported method type: " + methodType);
         }
+        requestHeaders.forEach((name, value) -> request.setHeader(name, value));
+        return request.build();
     }
 }
