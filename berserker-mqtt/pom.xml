@@ -1,0 +1,34 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>berserker</artifactId>
+        <groupId>io.smartcat</groupId>
+        <version>0.0.11-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>berserker-mqtt</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Berserker MQTT</name>
+    <description>Worker implementation which publishes messages MQTT topics.</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <version.rabbitmq>5.1.1</version.rabbitmq>
+        <version.eclipse.paho>1.2.0</version.eclipse.paho>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.smartcat</groupId>
+            <artifactId>berserker-commons</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <version>${version.eclipse.paho}</version>
+        </dependency>
+    </dependencies>
+</project>

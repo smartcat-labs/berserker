@@ -1,0 +1,29 @@
+load-generator-configuration:
+  data-source-configuration-name: Ranger
+  rate-generator-configuration-name: default
+  worker-configuration-name: MQTT
+  metrics-reporter-configuration-name: SimpleConsoleReporter
+  thread-count: 10
+  queue-capacity: 1000
+
+data-source-configuration:
+  values:
+    genre: random(['horror', 'comedy', 'action', 'sci-fi', 'drama', 'thriller'])
+    year: random(1980..2017)
+    message:
+      payload: string("{}-{}", $genre, $year)
+      qos: 0
+      topic: test
+  output: $message
+
+rate-generator-configuration:
+  rates:
+    r: 100
+  output: $r
+
+worker-configuration:
+  async: true
+  broker-url: "tcp://localhost:1883"
+  client-id: berserker
+  max-inflight: 200
+
