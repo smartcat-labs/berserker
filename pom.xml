@@ -19,6 +19,7 @@
         <module>berserker-cassandra</module>
         <module>berserker-http</module>
         <module>berserker-rabbitmq</module>
+        <module>berserker-mqtt</module>
         <module>berserker-runner</module>
     </modules>
 

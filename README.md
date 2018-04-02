@@ -100,6 +100,9 @@ List of existing modules:
 #### Berserker RabbitMQ
 [Berserker RabbitMQ](berserker-rabbitmq) is worker implementation which sends AMQP messages to RabbitMQ.
 
+#### Berserker MQTT
+[Berserker MQTT](berserker-mqtt) is worker implementation which publishes messages to MQTT broker.
+
 ### Usage
 
 Berserker can be used either as a library or as a stand-alone command line tool.
