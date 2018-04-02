@@ -2,19 +2,14 @@ package io.smartcat.berserker.mqtt.configuration;
 
 import java.util.Map;
 
-import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
-import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.smartcat.berserker.api.Worker;
 import io.smartcat.berserker.configuration.ConfigurationParseException;
 import io.smartcat.berserker.configuration.WorkerConfiguration;
-import io.smartcat.berserker.mqtt.worker.AsyncMqttWorker;
-import io.smartcat.berserker.mqtt.worker.SyncMqttWorker;
+import io.smartcat.berserker.mqtt.worker.MqttWorker;
 
 /**
  * Configuration for MQTT worker.
@@ -54,51 +49,25 @@ public class MqttConfiguration implements WorkerConfiguration {
         String username = (String) configuration.get(USERNAME);
         String password = (String) configuration.get(PASSWORD);
 
+        boolean calculatedAsync = calculateAsync(async);
         validateField(brokerUrl, BROKER_URL);
         validateField(clientId, CLIENT_ID);
         int calculatedMaxInflight = calculateMaxInflight(maxInflight);
         boolean calculatedCleanSession = calculateCleanSession(cleanSession);
         int calculatedConnectionTimeout = calculateConnectionTimeout(connectionTimeout);
-        int calculatedmqttVersion = calculateMqttVersion(mqttVersion);
+        int calculatedMqttVersion = calculateMqttVersion(mqttVersion);
 
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setMaxInflight(calculatedMaxInflight);
-        connectOptions.setCleanSession(calculatedCleanSession);
-        connectOptions.setConnectionTimeout(calculatedConnectionTimeout);
-        connectOptions.setMqttVersion(calculatedmqttVersion);
-        if (username != null) {
-            connectOptions.setUserName(username);
-        }
-        if (password != null) {
-            connectOptions.setPassword(password.toCharArray());
-        }
+        return new MqttWorker(calculatedAsync, brokerUrl, clientId, calculatedMaxInflight, calculatedCleanSession,
+                calculatedConnectionTimeout, calculatedMqttVersion, username, password);
+    }
+
+    private boolean calculateAsync(Boolean async) {
         if (async == null) {
             LOGGER.info("'" + ASYNC + "' not set, using default value: false");
-            MqttClient client;
-            try {
-                client = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
-            } catch (MqttException e) {
-                throw new RuntimeException(e);
-            }
-            return new SyncMqttWorker(client, connectOptions);
-        } else if (async) {
-            LOGGER.info("'" + ASYNC + "' set to value: " + async);
-            MqttAsyncClient client;
-            try {
-                client = new MqttAsyncClient(brokerUrl, clientId, new MemoryPersistence());
-            } catch (MqttException e) {
-                throw new RuntimeException(e);
-            }
-            return new AsyncMqttWorker(client, connectOptions);
+            return false;
         } else {
             LOGGER.info("'" + ASYNC + "' set to value: " + async);
-            MqttClient client;
-            try {
-                client = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
-            } catch (MqttException e) {
-                throw new RuntimeException(e);
-            }
-            return new SyncMqttWorker(client, connectOptions);
+            return async;
         }
     }
 
