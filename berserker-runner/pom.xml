@@ -80,20 +80,20 @@
                             <shadedArtifactAttached>false</shadedArtifactAttached>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <filters>
-                            <filter>
-			                  <artifact>*:*</artifact>
-			                  <excludes>
-			                    <exclude>META-INF/*.SF</exclude>
-			                    <exclude>META-INF/*.DSA</exclude>
-			                    <exclude>META-INF/*.RSA</exclude>
-			                  </excludes>
-			                </filter>
+                                <filter>
+                                  <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
                             </filters>
                             <artifactSet>
                                 <excludes>
-                                  <exclude>classworlds:classworlds</exclude>
-                                  <exclude>junit:junit</exclude>
-                                  <exclude>org.apache.maven:lib:tests</exclude>
+                                    <exclude>classworlds:classworlds</exclude>
+                                    <exclude>junit:junit</exclude>
+                                    <exclude>org.apache.maven:lib:tests</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>
