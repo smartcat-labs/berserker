@@ -58,6 +58,7 @@ rate-generator-configuration:
     output: $r
 
 worker-configuration:
+  async: false
   base-url: http://localhost:8080/api/item
   headers:
     X-Custom-Header-1: val-1
