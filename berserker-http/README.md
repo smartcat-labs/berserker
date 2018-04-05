@@ -2,9 +2,10 @@
 
 Worker implementation which sends HTTP request on configured endpoint.
 
-Configuration can define two properties:
-1. `base-url` - can be concatenated with request property `url-sufix` to construct url.
-2. `headers` - contains header names with its values.
+Configuration can define following properties:
+1. `async` - Can be `true` or `false`. Determines whether messages will be sent in asynchronous fashion or not. Optional, if not specified, defaults to `false`.
+2. `base-url` - Can be concatenated with request property `url-sufix` to construct URL. Optional, depending on whether `url` or `url-sufix` is specified.
+3. `headers` - Contains header names with its values which will be added to each request. Optional.
 
 Worker `accept` method expects following properties:
 1. `url` - whole url to be used, it ignores `base-url`. Mutually exclusive with `url-sufix`.
@@ -19,6 +20,7 @@ Example yaml configuration:
 
 ```yaml
 worker-configuration:
+  async: false
   base-url: http://localhost:8080/api/item
   headers:
     Content-Type: application/json

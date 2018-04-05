@@ -3,6 +3,9 @@ package io.smartcat.berserker.http.configuration;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.smartcat.berserker.api.Worker;
 import io.smartcat.berserker.configuration.ConfigurationParseException;
 import io.smartcat.berserker.configuration.WorkerConfiguration;
@@ -19,6 +22,9 @@ import io.smartcat.berserker.http.worker.HttpWorker;
  */
 public class HttpConfiguration implements WorkerConfiguration {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpConfiguration.class);
+
+    private static final String ASYNC = "async";
     private static final String BASE_URL = "base-url";
     private static final String HEADERS = "headers";
 
@@ -29,9 +35,22 @@ public class HttpConfiguration implements WorkerConfiguration {
 
     @Override
     public Worker<?> getWorker(Map<String, Object> configuration) throws ConfigurationParseException {
+        Boolean async = (Boolean) configuration.get(ASYNC);
         String baseUrl = (String) configuration.get(BASE_URL);
         Map<String, String> headers = getHeaders(configuration);
-        return new HttpWorker(baseUrl, headers);
+
+        boolean calculatedAsync = calculateAsync(async);
+        return new HttpWorker(calculatedAsync, baseUrl, headers);
+    }
+
+    private boolean calculateAsync(Boolean async) {
+        if (async == null) {
+            LOGGER.info("'" + ASYNC + "' not set, using default value: false");
+            return false;
+        } else {
+            LOGGER.info("'" + ASYNC + "' set to value: " + async);
+            return async;
+        }
     }
 
     @SuppressWarnings("unchecked")
