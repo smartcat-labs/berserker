@@ -1,5 +1,6 @@
 ## Common
 **/temp
+**/logs
 
 ## Java
 **/target
@@ -8,8 +9,6 @@
 *.project
 *.java-version
 
-## Scala
-**/.idea
-
 ## Intellij
+**/.idea
 *.iml
