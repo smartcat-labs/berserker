@@ -1,5 +1,8 @@
 package io.smartcat.berserker.mqtt.configuration;
 
+import static io.smartcat.berserker.configuration.ConfigurationHelper.getMandatoryValue;
+import static io.smartcat.berserker.configuration.ConfigurationHelper.getOptionalValue;
+
 import java.util.Map;
 
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -39,72 +42,18 @@ public class MqttConfiguration implements WorkerConfiguration {
 
     @Override
     public Worker<?> getWorker(Map<String, Object> configuration) throws ConfigurationParseException {
-        Boolean async = (Boolean) configuration.get(ASYNC);
-        String brokerUrl = (String) configuration.get(BROKER_URL);
-        String clientId = (String) configuration.get(CLIENT_ID);
-        Integer maxInflight = (Integer) configuration.get(MAX_INFLIGHT);
-        Boolean cleanSession = (Boolean) configuration.get(CLEAN_SESSION);
-        Integer connectionTimeout = (Integer) configuration.get(CONNECTION_TIMEOUT);
-        String mqttVersion = (String) configuration.get(MQTT_VERSION);
+        boolean async = getOptionalValue(configuration, ASYNC, false);
+        String brokerUrl = getMandatoryValue(configuration, BROKER_URL);
+        String clientId = getMandatoryValue(configuration, CLIENT_ID);
+        int maxInflight = getOptionalValue(configuration, MAX_INFLIGHT, 10);
+        boolean cleanSession = getOptionalValue(configuration, CLEAN_SESSION, true);
+        int connectionTimeout = getOptionalValue(configuration, CONNECTION_TIMEOUT, 30);
+        int mqttVersion = calculateMqttVersion((String) configuration.get(MQTT_VERSION));
         String username = (String) configuration.get(USERNAME);
         String password = (String) configuration.get(PASSWORD);
 
-        boolean calculatedAsync = calculateAsync(async);
-        validateField(brokerUrl, BROKER_URL);
-        validateField(clientId, CLIENT_ID);
-        int calculatedMaxInflight = calculateMaxInflight(maxInflight);
-        boolean calculatedCleanSession = calculateCleanSession(cleanSession);
-        int calculatedConnectionTimeout = calculateConnectionTimeout(connectionTimeout);
-        int calculatedMqttVersion = calculateMqttVersion(mqttVersion);
-
-        return new MqttWorker(calculatedAsync, brokerUrl, clientId, calculatedMaxInflight, calculatedCleanSession,
-                calculatedConnectionTimeout, calculatedMqttVersion, username, password);
-    }
-
-    private boolean calculateAsync(Boolean async) {
-        if (async == null) {
-            LOGGER.info("'" + ASYNC + "' not set, using default value: false");
-            return false;
-        } else {
-            LOGGER.info("'" + ASYNC + "' set to value: " + async);
-            return async;
-        }
-    }
-
-    private void validateField(String field, String fieldName) {
-        if (field == null || field.isEmpty()) {
-            throw new RuntimeException("'" + fieldName + "' is mandatory.");
-        }
-    }
-
-    private int calculateMaxInflight(Integer maxInflight) {
-        if (maxInflight == null) {
-            LOGGER.info("'" + MAX_INFLIGHT + "' not set, using default value: 10");
-            return 10;
-        } else {
-            LOGGER.info("'" + MAX_INFLIGHT + "' set to value: " + maxInflight);
-            return maxInflight;
-        }
-    }
-
-    private boolean calculateCleanSession(Boolean cleanSession) {
-        if (cleanSession == null) {
-            LOGGER.info("'" + CLEAN_SESSION + "' not set, using default value: true");
-            return true;
-        } else {
-            LOGGER.info("'" + CLEAN_SESSION + "' set to value: " + CLEAN_SESSION);
-            return cleanSession;
-        }
-    }
-
-    private int calculateConnectionTimeout(Integer connectionTimeout) {
-        if (connectionTimeout == null) {
-            LOGGER.info("'" + CONNECTION_TIMEOUT + "' not set, using default value: 30");
-            return 30;
-        } else {
-            LOGGER.info("'" + CONNECTION_TIMEOUT + "' set to value: " + connectionTimeout);
-            return connectionTimeout;
-        }
+        return new MqttWorker(async, brokerUrl, clientId, maxInflight, cleanSession, connectionTimeout, mqttVersion,
+                username, password);
     }
 
     private int calculateMqttVersion(String mqttVersion) {
