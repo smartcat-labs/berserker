@@ -27,6 +27,7 @@ public class HttpWorker implements Worker<Map<String, Object>> {
     private static final String HEAD = "HEAD";
     private static final List<String> METHOD_TYPES = Arrays.asList(GET, POST, PUT, DELETE, HEAD);
 
+    private final boolean async;
     private final String baseUrl;
     private final Map<String, String> headers;
 
@@ -35,14 +36,40 @@ public class HttpWorker implements Worker<Map<String, Object>> {
     /**
      * Constructs HTTP worker with specified properties.
      *
-     * @param baseUrl Can be concatenated with request property <code>url-sufix</code> to constructs url.
+     * @param async Indicates whether HTTP worker should behave in asynchronous or synchronous manner.
+     * @param keepAlive Indicates whether HTTP keep-alive is enabled or not.
+     * @param maxConnections The maximum number of connections an {@link AsyncHttpClient} can handle.
+     * @param maxConnectionsPerHost The maximum number of connections per host an AsyncHttpClient can handle.
+     * @param connectTimeout The maximum time in millisecond an {@link AsyncHttpClient} can wait when connecting to a
+     *            remote host.
+     * @param readTimeout The maximum time in millisecond an {@link AsyncHttpClient} can stay idle.
+     * @param pooledConnectionIdleTimeout The maximum time in millisecond an {@link AsyncHttpClient} will keep
+     *            connection in pool.
+     * @param requestTimeout The maximum time in millisecond an {@link AsyncHttpClient} waits until the response is
+     *            completed.
+     * @param followRedirect Indicates whether HTTP redirect is enabled.
+     * @param maxRedirects The maximum number of HTTP redirects.
+     * @param maxRequestRetry The number of time the library will retry when an {@link java.io.IOException} is thrown by
+     *            the remote server.
+     * @param connectionTtl The maximum time in millisecond an {@link AsyncHttpClient} will keep connection in the pool,
+     *            or -1 to keep connection while possible.
+     * @param baseUrl Can be concatenated with request property <code>url-sufix</code> to constructs URL.
      * @param headers Map of headers to use for each request.
      */
-    public HttpWorker(String baseUrl, Map<String, String> headers) {
+    public HttpWorker(boolean async, boolean keepAlive, int maxConnections, int maxConnectionsPerHost,
+            int connectTimeout, int readTimeout, int pooledConnectionIdleTimeout, int requestTimeout,
+            boolean followRedirect, int maxRedirects, int maxRequestRetry, int connectionTtl, String baseUrl,
+            Map<String, String> headers) {
+        this.async = async;
         this.baseUrl = baseUrl;
         this.headers = headers;
 
-        AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().build();
+        AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setKeepAlive(keepAlive)
+                .setMaxConnections(maxConnections).setMaxConnectionsPerHost(maxConnectionsPerHost)
+                .setConnectTimeout(connectTimeout).setReadTimeout(readTimeout)
+                .setPooledConnectionIdleTimeout(pooledConnectionIdleTimeout).setRequestTimeout(requestTimeout)
+                .setFollowRedirect(followRedirect).setMaxRedirects(maxRedirects).setMaxRequestRetry(maxRequestRetry)
+                .setConnectionTtl(connectionTtl).build();
         asyncHttpClient = new DefaultAsyncHttpClient(config);
     }
 
@@ -73,7 +100,7 @@ public class HttpWorker implements Worker<Map<String, Object>> {
         String calculatedUrl = getCalculatedUrl(url, urlSufix);
         Map<String, String> calculatedHeaders = getCalculatedHeaders(requestHeaders);
 
-        asyncHttpClient.executeRequest(
+        ListenableFuture<Response> responseFuture = asyncHttpClient.executeRequest(
                 createRequest(methodType, calculatedUrl, calculatedHeaders, body),
                 new AsyncCompletionHandler<Response>() {
                     @Override
@@ -86,6 +113,13 @@ public class HttpWorker implements Worker<Map<String, Object>> {
                         throw new RuntimeException(t);
                     }
                 });
+        if (!async) {
+            try {
+                responseFuture.get();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
