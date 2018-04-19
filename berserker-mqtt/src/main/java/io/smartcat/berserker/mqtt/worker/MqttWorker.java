@@ -47,6 +47,7 @@ public class MqttWorker implements Worker<Map<String, Object>>, AutoCloseable {
             this.client = new MqttAsyncClient(brokerUrl, clientId, new MemoryPersistence());
             this.connectOptions = new MqttConnectOptions();
             this.connectOptions.setMaxInflight(maxInflight);
+            this.connectOptions.setCleanSession(cleanSession);
             this.connectOptions.setConnectionTimeout(connectionTimeout);
             this.connectOptions.setMqttVersion(mqttVersion);
             if (username != null) {
