@@ -58,6 +58,18 @@ rate-generator-configuration:
     output: $r
 
 worker-configuration:
+  async: false
+  keep-alive: true
+  max-connections: -1
+  max-connections-per-host: -1
+  connect-timeout: 5000
+  read-timeout: 60000
+  pooled-connection-idle-timeout: 60000
+  request-timeout: 60000
+  follow-redirect: true
+  max-redirects: 5
+  max-request-retry: 5
+  connection-ttl: -1
   base-url: http://localhost:8080/api/item
   headers:
     X-Custom-Header-1: val-1

@@ -1,5 +1,7 @@
 package io.smartcat.berserker.http.configuration;
 
+import static io.smartcat.berserker.configuration.ConfigurationHelper.getOptionalValue;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,6 +21,18 @@ import io.smartcat.berserker.http.worker.HttpWorker;
  */
 public class HttpConfiguration implements WorkerConfiguration {
 
+    private static final String ASYNC = "async";
+    private static final String KEEP_ALIVE = "keep-alive";
+    private static final String MAX_CONNECTIONS = "max-connections";
+    private static final String MAX_CONNECTIONS_PER_HOST = "max-connections-per-host";
+    private static final String CONNECT_TIMEOUT = "connect-timeout";
+    private static final String READ_TIMEOUT = "read-timeout";
+    private static final String POOLED_CONNECTION_IDLE_TIMEOUT = "pooled-connection-idle-timeout";
+    private static final String REQUEST_TIMEOUT = "request-timeout";
+    private static final String FOLLOW_REDIRECT = "follow-redirect";
+    private static final String MAX_REDIRECTS = "max-redirects";
+    private static final String MAX_REQUEST_RETRY = "max-request-retry";
+    private static final String CONNECTION_TTL = "connection-ttl";
     private static final String BASE_URL = "base-url";
     private static final String HEADERS = "headers";
 
@@ -29,9 +43,24 @@ public class HttpConfiguration implements WorkerConfiguration {
 
     @Override
     public Worker<?> getWorker(Map<String, Object> configuration) throws ConfigurationParseException {
+        boolean async = getOptionalValue(configuration, ASYNC, false);
+        boolean keepAlive = getOptionalValue(configuration, KEEP_ALIVE, true);
+        int maxConnections = getOptionalValue(configuration, MAX_CONNECTIONS, -1);
+        int maxConnectionsPerHost = getOptionalValue(configuration, MAX_CONNECTIONS_PER_HOST, -1);
+        int connectTimeout = getOptionalValue(configuration, CONNECT_TIMEOUT, 5000);
+        int readTimeout = getOptionalValue(configuration, READ_TIMEOUT, 60000);
+        int pooledConnectionIdleTimeout = getOptionalValue(configuration, POOLED_CONNECTION_IDLE_TIMEOUT, 60000);
+        int requestTimeout = getOptionalValue(configuration, REQUEST_TIMEOUT, 60000);
+        boolean followRedirect = getOptionalValue(configuration, FOLLOW_REDIRECT, true);
+        int maxRedirects = getOptionalValue(configuration, MAX_REDIRECTS, 5);
+        int maxRequestRetry = getOptionalValue(configuration, MAX_REQUEST_RETRY, 5);
+        int connectionTtl = getOptionalValue(configuration, CONNECTION_TTL, -1);
         String baseUrl = (String) configuration.get(BASE_URL);
         Map<String, String> headers = getHeaders(configuration);
-        return new HttpWorker(baseUrl, headers);
+
+        return new HttpWorker(async, keepAlive, maxConnections, maxConnectionsPerHost, connectTimeout, readTimeout,
+                pooledConnectionIdleTimeout, requestTimeout, followRedirect, maxRedirects, maxRequestRetry,
+                connectionTtl, baseUrl, headers);
     }
 
     @SuppressWarnings("unchecked")
