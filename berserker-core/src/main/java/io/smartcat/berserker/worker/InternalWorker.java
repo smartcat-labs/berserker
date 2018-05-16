@@ -24,9 +24,9 @@ import io.smartcat.berserker.util.LinkedEvictingBlockingQueue;
  *
  * @param <T> Type of data this worker accepts.
  */
-public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
+public class InternalWorker<T> implements Worker<T>, AutoCloseable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncWorker.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InternalWorker.class);
     private static final String DEFAULT_METRICS_PREFIX = "io.smartcat.berserker";
     private static final String DROPPED = "dropped";
     private static final String WAIT_TIME = "waitTime";
@@ -58,7 +58,7 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
      * @param delegate Worker which is run in thread pool and to which work is delegated.
      * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
      */
-    public AsyncWorker(Worker<T> delegate, int queueCapacity) {
+    public InternalWorker(Worker<T> delegate, int queueCapacity) {
         this(delegate, queueCapacity, true);
     }
 
@@ -73,7 +73,7 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
      * @param dropFromHead If true, packet from head of the queue will be dropped, if false, packet from tail of the
      *            queue will be dropped.
      */
-    public AsyncWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead) {
+    public InternalWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead) {
         this(delegate, queueCapacity, dropFromHead, DEFAULT_METRICS_PREFIX);
     }
 
@@ -89,7 +89,7 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
      *            queue will be dropped.
      * @param metricsPrefix Prefix for metrics.
      */
-    public AsyncWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead, String metricsPrefix) {
+    public InternalWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead, String metricsPrefix) {
         this(delegate, queueCapacity, dropFromHead, metricsPrefix, Runtime.getRuntime().availableProcessors());
     }
 
@@ -105,8 +105,8 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
      * @param metricsPrefix Prefix for metrics.
      * @param threadCount Number of thread to be used by thread pool, must be positive number.
      */
-    public AsyncWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead, String metricsPrefix,
-            int threadCount) {
+    public InternalWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead, String metricsPrefix,
+                          int threadCount) {
         this(delegate, queueCapacity, dropFromHead, metricsPrefix, threadCount, new DefaultThreadFactory());
     }
 
@@ -122,8 +122,8 @@ public class AsyncWorker<T> implements Worker<T>, AutoCloseable {
      * @param threadCount Number of thread to be used by thread pool, must be positive number.
      * @param threadFactory ThreadFactory to be used in creating threads for thread pool.
      */
-    public AsyncWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead, String metricsPrefix,
-            int threadCount, ThreadFactory threadFactory) {
+    public InternalWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead, String metricsPrefix,
+                          int threadCount, ThreadFactory threadFactory) {
         if (delegate == null) {
             throw new IllegalArgumentException("Delegate cannot be null.");
         }
