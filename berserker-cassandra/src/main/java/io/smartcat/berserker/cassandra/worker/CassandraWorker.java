@@ -5,14 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.Cluster.Builder;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.RegularStatement;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.SimpleStatement;
-import com.datastax.driver.core.Statement;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.smartcat.berserker.api.Worker;
 import io.smartcat.berserker.cassandra.configuration.PreparedStatement;
 
@@ -42,7 +40,7 @@ public class CassandraWorker implements Worker<Map<String, Object>> {
      * @param bootstrapDDLCommands List of CQL commands to execute only once after connection to Cassandra cluster is
      *            established. Suitable for creating keyspaces, tables and populating some initial data if needed.
      * @param prepStatements List of prepared statements to create. Each statement is defined with id and can be
-     *            referenced from {@link #accept(Map)} method.
+     *            referenced from {@link #accept(Map, Runnable, Runnable)} method.
      */
     public CassandraWorker(List<InetSocketAddress> connectionPointsWithPorts, boolean useSSL, String keyspace,
             boolean async, List<String> bootstrapDDLCommands, List<PreparedStatement> prepStatements) {
@@ -100,10 +98,10 @@ public class CassandraWorker implements Worker<Map<String, Object>> {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public void accept(Map<String, Object> queryMetadata) {
+    public void accept(Map<String, Object> queryMetadata, Runnable commitSuccess, Runnable commitFailure) {
         ConsistencyLevel consistencyLevel = getConsistencyLevel(queryMetadata);
         String statement = (String) queryMetadata.get(QUERY);
-        Statement toExecute = null;
+        Statement toExecute;
         if (statement != null) {
             toExecute = new SimpleStatement(statement);
         } else {
@@ -124,10 +122,25 @@ public class CassandraWorker implements Worker<Map<String, Object>> {
         }
 
         toExecute.setConsistencyLevel(consistencyLevel);
-        if (async) {
-            session.executeAsync(toExecute);
-        } else {
-            session.execute(toExecute);
+        ResultSetFuture future = session.executeAsync(toExecute);
+        Futures.addCallback(future, new FutureCallback<ResultSet>() {
+            @Override
+            public void onSuccess(ResultSet result) {
+                commitSuccess.run();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                commitFailure.run();
+            }
+        }, MoreExecutors.directExecutor());
+        if (!async) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
         }
     }
 

@@ -2,13 +2,13 @@ package io.smartcat.berserker;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.smartcat.berserker.api.DataSource;
 import io.smartcat.berserker.api.RateGenerator;
-import io.smartcat.berserker.api.Worker;
 
 /**
  * Load generator used to execute work tasks with data from provided data source.
@@ -23,7 +23,7 @@ public class LoadGenerator<T> {
 
     private final DataSource<T> dataSource;
     private final RateGenerator rateGenerator;
-    private final Worker<T> worker;
+    private final Consumer<T> worker;
 
     private AtomicBoolean terminate = new AtomicBoolean(false);
 
@@ -36,7 +36,7 @@ public class LoadGenerator<T> {
      * @param worker Worker which accepts data polled from <code>dataSource</code> at rate provided by
      *            <code>rateGenerator</code>.
      */
-    public LoadGenerator(DataSource<T> dataSource, RateGenerator rateGenerator, Worker<T> worker) {
+    public LoadGenerator(DataSource<T> dataSource, RateGenerator rateGenerator, Consumer<T> worker) {
         this.dataSource = dataSource;
         this.rateGenerator = rateGenerator;
         this.worker = worker;

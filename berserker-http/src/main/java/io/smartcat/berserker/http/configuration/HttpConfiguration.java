@@ -2,7 +2,9 @@ package io.smartcat.berserker.http.configuration;
 
 import static io.smartcat.berserker.configuration.ConfigurationHelper.getOptionalValue;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.smartcat.berserker.api.Worker;
@@ -35,6 +37,11 @@ public class HttpConfiguration implements WorkerConfiguration {
     private static final String CONNECTION_TTL = "connection-ttl";
     private static final String BASE_URL = "base-url";
     private static final String HEADERS = "headers";
+    private static final String ERROR_CODES = "error-codes";
+
+    private static final List<Integer> DEFAULT_ERROR_CODES = Arrays.asList(400, 401, 402, 403, 404, 405, 406, 407, 408,
+            409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 421, 422, 423, 424, 426, 428, 429, 431, 451, 500, 501,
+            502, 503, 504, 505, 506, 507, 508, 510, 511);
 
     @Override
     public String getName() {
@@ -55,12 +62,13 @@ public class HttpConfiguration implements WorkerConfiguration {
         int maxRedirects = getOptionalValue(configuration, MAX_REDIRECTS, 5);
         int maxRequestRetry = getOptionalValue(configuration, MAX_REQUEST_RETRY, 5);
         int connectionTtl = getOptionalValue(configuration, CONNECTION_TTL, -1);
+        List<Integer> errorCodes = getOptionalValue(configuration, ERROR_CODES, DEFAULT_ERROR_CODES);
         String baseUrl = (String) configuration.get(BASE_URL);
         Map<String, String> headers = getHeaders(configuration);
 
         return new HttpWorker(async, keepAlive, maxConnections, maxConnectionsPerHost, connectTimeout, readTimeout,
                 pooledConnectionIdleTimeout, requestTimeout, followRedirect, maxRedirects, maxRequestRetry,
-                connectionTtl, baseUrl, headers);
+                connectionTtl, baseUrl, headers, errorCodes);
     }
 
     @SuppressWarnings("unchecked")

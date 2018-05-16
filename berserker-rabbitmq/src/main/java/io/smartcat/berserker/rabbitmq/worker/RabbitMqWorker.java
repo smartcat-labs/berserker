@@ -53,14 +53,16 @@ public class RabbitMqWorker implements Worker<Map<String, Object>>, AutoCloseabl
     }
 
     @Override
-    public void accept(Map<String, Object> message) {
+    public void accept(Map<String, Object> message, Runnable commitSuccess, Runnable commitFailure) {
         String exchangeName = (String) message.get(EXCHANGE_NAME);
         String routingKey = (String) message.get(ROUTING_KEY);
         BasicProperties props = createProperties(message);
         String messageContent = (String) message.get(MESSAGE_CONTENT);
         try {
             channel.basicPublish(exchangeName, routingKey, props, messageContent.getBytes());
+            commitSuccess.run();
         } catch (IOException e) {
+            commitFailure.run();
             throw new RuntimeException(e);
         }
     }

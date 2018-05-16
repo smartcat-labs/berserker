@@ -28,6 +28,7 @@ public class ConfigurationHelper {
         if (value == null || (value instanceof String && ((String) value).isEmpty())) {
             throw new RuntimeException("'" + name + "' is mandatory.");
         }
+        LOGGER.info("'" + name + "' set to value: " + value);
         return value;
     }
 
@@ -45,9 +46,12 @@ public class ConfigurationHelper {
         if (value == null) {
             LOGGER.info("'" + name + "' not set, using default value: " + defaultValue);
             return defaultValue;
-        } else {
-            LOGGER.info("'" + name + "' set to value: " + value);
-            return value;
         }
+        if (defaultValue != null && !defaultValue.getClass().isAssignableFrom(value.getClass())) {
+            throw new RuntimeException("'" + name + "' set to wrong value. Value is of type: "
+                    + value.getClass().getName() + ", but should be of type: " + defaultValue.getClass().getName());
+        }
+        LOGGER.info("'" + name + "' set to value: " + value);
+        return value;
     }
 }

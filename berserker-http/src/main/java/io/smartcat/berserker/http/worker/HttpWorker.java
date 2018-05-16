@@ -30,6 +30,7 @@ public class HttpWorker implements Worker<Map<String, Object>> {
     private final boolean async;
     private final String baseUrl;
     private final Map<String, String> headers;
+    private final List<Integer> errorCodes;
 
     private AsyncHttpClient asyncHttpClient;
 
@@ -55,14 +56,16 @@ public class HttpWorker implements Worker<Map<String, Object>> {
      *            or -1 to keep connection while possible.
      * @param baseUrl Can be concatenated with request property <code>url-sufix</code> to constructs URL.
      * @param headers Map of headers to use for each request.
+     * @param errorCodes List of codes to be considered errors.
      */
     public HttpWorker(boolean async, boolean keepAlive, int maxConnections, int maxConnectionsPerHost,
             int connectTimeout, int readTimeout, int pooledConnectionIdleTimeout, int requestTimeout,
             boolean followRedirect, int maxRedirects, int maxRequestRetry, int connectionTtl, String baseUrl,
-            Map<String, String> headers) {
+            Map<String, String> headers, List<Integer> errorCodes) {
         this.async = async;
         this.baseUrl = baseUrl;
         this.headers = headers;
+        this.errorCodes = errorCodes;
 
         AsyncHttpClientConfig config = new DefaultAsyncHttpClientConfig.Builder().setKeepAlive(keepAlive)
                 .setMaxConnections(maxConnections).setMaxConnectionsPerHost(maxConnectionsPerHost)
@@ -90,7 +93,7 @@ public class HttpWorker implements Worker<Map<String, Object>> {
      * </ul>
      */
     @Override
-    public void accept(Map<String, Object> requestMetadata) {
+    public void accept(Map<String, Object> requestMetadata, Runnable commitSuccess, Runnable commitFailure) {
         String url = (String) requestMetadata.get(URL);
         String urlSufix = (String) requestMetadata.get(URL_SUFIX);
         Map<String, String> requestHeaders = getHeaders(requestMetadata);
@@ -105,12 +108,17 @@ public class HttpWorker implements Worker<Map<String, Object>> {
                 new AsyncCompletionHandler<Response>() {
                     @Override
                     public Response onCompleted(Response response) throws Exception {
+                        if (errorCodes.contains(response.getStatusCode())) {
+                            commitFailure.run();
+                        } else {
+                            commitSuccess.run();
+                        }
                         return response;
                     }
 
                     @Override
                     public void onThrowable(Throwable t) {
-                        throw new RuntimeException(t);
+                        commitFailure.run();
                     }
                 });
         if (!async) {
