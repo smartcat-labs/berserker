@@ -2,10 +2,7 @@ package io.smartcat.berserker.mqtt.worker;
 
 import java.util.Map;
 
-import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import io.smartcat.berserker.api.Worker;
@@ -62,7 +59,7 @@ public class MqttWorker implements Worker<Map<String, Object>>, AutoCloseable {
     }
 
     @Override
-    public void accept(Map<String, Object> message) {
+    public void accept(Map<String, Object> message, Runnable commitSuccess, Runnable commitFailure) {
         ensureConnected();
         String topic = (String) message.get(TOPIC);
         int qos = (Integer) message.get(QOS);
@@ -70,10 +67,19 @@ public class MqttWorker implements Worker<Map<String, Object>>, AutoCloseable {
         MqttMessage mqttMessage = new MqttMessage(payload.getBytes());
         mqttMessage.setQos(qos);
         try {
-            if (async) {
-                client.publish(topic, mqttMessage);
-            } else {
-                client.publish(topic, mqttMessage).waitForCompletion();
+            IMqttDeliveryToken token = client.publish(topic, mqttMessage, null, new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+                    commitSuccess.run();
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                    commitFailure.run();
+                }
+            });
+            if (!async) {
+                token.waitForCompletion();
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

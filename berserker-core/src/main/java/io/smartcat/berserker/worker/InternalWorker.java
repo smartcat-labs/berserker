@@ -5,6 +5,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,33 +19,45 @@ import io.smartcat.berserker.api.Worker;
 import io.smartcat.berserker.util.LinkedEvictingBlockingQueue;
 
 /**
- * Asynchronous worker which uses queue and thread pool to schedule work for delegate worker. When queue is full and new
- * packet is received, an old packet will be dropped. <code>dropFromHead</code> parameter determines whether packet from
- * head or from tail will e dropped.
+ * Default implementation of {@link InternalWorker} which uses queue and thread pool to schedule work for delegate
+ * worker. When queue is full and new message is received, an old message will be dropped. <code>dropFromHead</code>
+ * parameter determines whether message from head or from tail will e dropped.
  *
  * @param <T> Type of data this worker accepts.
  */
-public class InternalWorker<T> implements Worker<T>, AutoCloseable {
+public class InternalWorker<T> implements Consumer<T>, AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InternalWorker.class);
     private static final String DEFAULT_METRICS_PREFIX = "io.smartcat.berserker";
     private static final String DROPPED = "dropped";
     private static final String WAIT_TIME = "waitTime";
-    private static final String SERVICE_TIME = "serviceTime";
-    private static final String RESPONSE_TIME = "responseTime";
+    private static final String SUCCESS_SERVICE_TIME = "successServiceTime";
+    private static final String FAILURE_SERVICE_TIME = "failureServiceTime";
+    private static final String TOTAL_SERVICE_TIME = "totalServiceTime";
+    private static final String SUCCESS_RESPONSE_TIME = "successResponseTime";
+    private static final String FAILURE_RESPONSE_TIME = "failureResponseTime";
+    private static final String TOTAL_RESPONSE_TIME = "totalResponseTime";
     private static final String GENERATED_THROUGHPUT = "generatedThroughput";
-    private static final String PROCESSED_THROUGHPUT = "processedThroughput";
+    private static final String SUCCESS_PROCESSED_THROUGHPUT = "successProcessedThroughput";
+    private static final String FAILURE_PROCESSED_THROUGHPUT = "failureProcessedThroughput";
+    private static final String TOTAL_PROCESSED_THROUGHPUT = "totalProcessedThroughput";
     private static final String QUEUE_SIZE = "queueSize";
 
-    private final LinkedEvictingBlockingQueue<DefaultWorkerMeta> queue;
+    private final LinkedEvictingBlockingQueue<WorkerMeta> queue;
     private final ThreadPoolExecutor threadPoolExecutor;
     private final MetricRegistry metricRegistry;
     private final Meter droppedMeter;
     private final Histogram waitTime;
-    private final Histogram serviceTime;
-    private final Histogram responseTIme;
+    private final Histogram successServiceTime;
+    private final Histogram failureServiceTime;
+    private final Histogram totalServiceTime;
+    private final Histogram successResponseTime;
+    private final Histogram failureResponseTime;
+    private final Histogram totalResponseTime;
     private final Meter generatedThroughput;
-    private final Meter processedThroughput;
+    private final Meter totalProcessedThroughput;
+    private final Meter successProcessedThroughput;
+    private final Meter failureProcessedThroughput;
 
     private boolean closed = false;
 
@@ -56,7 +69,7 @@ public class InternalWorker<T> implements Worker<T>, AutoCloseable {
      * {@link DefaultThreadFactory}.
      *
      * @param delegate Worker which is run in thread pool and to which work is delegated.
-     * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
+     * @param queueCapacity Capacity of the queue used as a message buffer, must be positive number.
      */
     public InternalWorker(Worker<T> delegate, int queueCapacity) {
         this(delegate, queueCapacity, true);
@@ -69,8 +82,8 @@ public class InternalWorker<T> implements Worker<T>, AutoCloseable {
      * <code>threadFactory</code> is set to {@link DefaultThreadFactory}.
      *
      * @param delegate Worker which is run in thread pool and to which work is delegated.
-     * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
-     * @param dropFromHead If true, packet from head of the queue will be dropped, if false, packet from tail of the
+     * @param queueCapacity Capacity of the queue used as a message buffer, must be positive number.
+     * @param dropFromHead If true, message from head of the queue will be dropped, if false, message from tail of the
      *            queue will be dropped.
      */
     public InternalWorker(Worker<T> delegate, int queueCapacity, boolean dropFromHead) {
@@ -84,8 +97,8 @@ public class InternalWorker<T> implements Worker<T>, AutoCloseable {
      * {@link DefaultThreadFactory}.
      *
      * @param delegate Worker which is run in thread pool and to which work is delegated.
-     * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
-     * @param dropFromHead If true, packet from head of the queue will be dropped, if false, packet from tail of the
+     * @param queueCapacity Capacity of the queue used as a message buffer, must be positive number.
+     * @param dropFromHead If true, message from head of the queue will be dropped, if false, message from tail of the
      *            queue will be dropped.
      * @param metricsPrefix Prefix for metrics.
      */
@@ -99,8 +112,8 @@ public class InternalWorker<T> implements Worker<T>, AutoCloseable {
      * set to {@link DefaultThreadFactory}.
      *
      * @param delegate Worker which is run in thread pool and to which work is delegated.
-     * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
-     * @param dropFromHead If true, packet from head of the queue will be dropped, if false, packet from tail of the
+     * @param queueCapacity Capacity of the queue used as a message buffer, must be positive number.
+     * @param dropFromHead If true, message from head of the queue will be dropped, if false, message from tail of the
      *            queue will be dropped.
      * @param metricsPrefix Prefix for metrics.
      * @param threadCount Number of thread to be used by thread pool, must be positive number.
@@ -115,8 +128,8 @@ public class InternalWorker<T> implements Worker<T>, AutoCloseable {
      * <code>dropFromHead</code>, <code>metricsPrefix</code>, <code>threadCount</code> and <code>threadFactory</code>.
      *
      * @param delegate Worker which is run in thread pool and to which work is delegated.
-     * @param queueCapacity Capacity of the queue used as a packet buffer, must be positive number.
-     * @param dropFromHead If true, packet from head of the queue will be dropped, if false, packet from tail of the
+     * @param queueCapacity Capacity of the queue used as a message buffer, must be positive number.
+     * @param dropFromHead If true, message from head of the queue will be dropped, if false, message from tail of the
      *            queue will be dropped.
      * @param metricsPrefix Prefix for metrics.
      * @param threadCount Number of thread to be used by thread pool, must be positive number.
@@ -141,20 +154,31 @@ public class InternalWorker<T> implements Worker<T>, AutoCloseable {
         this.metricRegistry = new MetricRegistry();
         this.droppedMeter = metricRegistry.meter(name(metricsPrefix, DROPPED));
         this.waitTime = metricRegistry.histogram(name(metricsPrefix, WAIT_TIME));
-        this.serviceTime = metricRegistry.histogram(name(metricsPrefix, SERVICE_TIME));
-        this.responseTIme = metricRegistry.histogram(name(metricsPrefix, RESPONSE_TIME));
+        this.successServiceTime = metricRegistry.histogram(name(metricsPrefix, SUCCESS_SERVICE_TIME));
+        this.failureServiceTime = metricRegistry.histogram(name(metricsPrefix, FAILURE_SERVICE_TIME));
+        this.totalServiceTime = metricRegistry.histogram(name(metricsPrefix, TOTAL_SERVICE_TIME));
+        this.successResponseTime = metricRegistry.histogram(name(metricsPrefix, SUCCESS_RESPONSE_TIME));
+        this.failureResponseTime = metricRegistry.histogram(name(metricsPrefix, FAILURE_RESPONSE_TIME));
+        this.totalResponseTime = metricRegistry.histogram(name(metricsPrefix, TOTAL_RESPONSE_TIME));
         this.generatedThroughput = metricRegistry.meter(name(metricsPrefix, GENERATED_THROUGHPUT));
-        this.processedThroughput = metricRegistry.meter(name(metricsPrefix, PROCESSED_THROUGHPUT));
+        this.successProcessedThroughput = metricRegistry.meter(name(metricsPrefix, SUCCESS_PROCESSED_THROUGHPUT));
+        this.failureProcessedThroughput = metricRegistry.meter(name(metricsPrefix, FAILURE_PROCESSED_THROUGHPUT));
+        this.totalProcessedThroughput = metricRegistry.meter(name(metricsPrefix, TOTAL_PROCESSED_THROUGHPUT));
         metricRegistry.gauge(name(metricsPrefix, QUEUE_SIZE), () -> () -> queue.size());
     }
 
+    /**
+     * Accepts message of type {@code <T>}.
+     *
+     * @param message Message to be processed.
+     */
     @Override
-    public void accept(T t) {
+    public void accept(T message) {
         if (closed) {
             throw new AlreadyClosedException("Worker is already closed.");
         }
-        DefaultWorkerMeta meta = new DefaultWorkerMeta(t);
-        DefaultWorkerMeta dropped = queue.put(meta);
+        WorkerMeta meta = new WorkerMeta(message);
+        WorkerMeta dropped = queue.put(meta);
         if (dropped != null) {
             droppedMeter.mark();
         }
@@ -186,14 +210,27 @@ public class InternalWorker<T> implements Worker<T>, AutoCloseable {
             result.submit(() -> {
                 while (true) {
                     try {
-                        DefaultWorkerMeta meta = queue.take();
+                        WorkerMeta meta = queue.take();
                         meta.markAsAccepted();
-                        delegate.accept(meta.getPayload());
-                        meta.markAsDone();
-                        waitTime.update(meta.getWaitNanoTime());
-                        serviceTime.update(meta.getServiceNanoTime());
-                        responseTIme.update(meta.getResposeNanoTime());
-                        processedThroughput.mark();
+                        delegate.accept(meta.getPayload(), () -> {
+                            meta.markAsDone();
+                            waitTime.update(meta.getWaitNanoTime());
+                            successServiceTime.update(meta.getServiceNanoTime());
+                            totalServiceTime.update(meta.getServiceNanoTime());
+                            successResponseTime.update(meta.getResponseNanoTime());
+                            totalResponseTime.update(meta.getResponseNanoTime());
+                            successProcessedThroughput.mark();
+                            totalProcessedThroughput.mark();
+                        }, () -> {
+                            meta.markAsDone();
+                            waitTime.update(meta.getWaitNanoTime());
+                            failureServiceTime.update(meta.getServiceNanoTime());
+                            totalServiceTime.update(meta.getServiceNanoTime());
+                            failureResponseTime.update(meta.getResponseNanoTime());
+                            totalResponseTime.update(meta.getResponseNanoTime());
+                            failureProcessedThroughput.mark();
+                            totalProcessedThroughput.mark();
+                        });
                     } catch (Exception e) {
                         String workerName = delegate.getClass().getName();
                         LOGGER.error("Error while accepting payload at worker: " + workerName + ". Error: ", e);
@@ -227,45 +264,9 @@ public class InternalWorker<T> implements Worker<T>, AutoCloseable {
     }
 
     /**
-     * Meta data on worker packet processing.
-     *
-     * @param <T> Type of payload this meta data contains.
+     * Meta data on worker message processing.
      */
-    public interface WorkerMeta<T> {
-
-        /**
-         * Returns payload sent to worker.
-         *
-         * @return payload sent to worker.
-         */
-        T getPayload();
-
-        /**
-         * Returns time in nanoseconds when packet was submitted to the worker thread.
-         *
-         * @return time in nanoseconds when packet was submitted to the worker thread.
-         */
-        long getWaitNanoTime();
-
-        /**
-         * Returns time in nanoseconds when packet was accepted by the worker.
-         *
-         * @return time in nanoseconds when packet was accepted by the worker.
-         */
-        long getServiceNanoTime();
-
-        /**
-         * Returns time in nanoseconds when processing was done on packet.
-         *
-         * @return time in nanoseconds when processing was done on packet.
-         */
-        long getResposeNanoTime();
-    }
-
-    /**
-     * Default implementation of {@link WorkerMeta}.
-     */
-    private class DefaultWorkerMeta implements WorkerMeta<T> {
+    private class WorkerMeta {
 
         private final T payload;
         private final long timeSubmittedInNanos;
@@ -273,42 +274,58 @@ public class InternalWorker<T> implements Worker<T>, AutoCloseable {
         private long timeDoneInNanos;
         private boolean dropped = false;
 
-        public DefaultWorkerMeta(T payload) {
+        WorkerMeta(T payload) {
             this.payload = payload;
             this.timeSubmittedInNanos = now();
         }
 
-        public void markAsAccepted() {
+        void markAsAccepted() {
             timeAcceptedInNanos = now();
         }
 
-        public void markAsDone() {
+        void markAsDone() {
             timeDoneInNanos = now();
         }
 
-        @Override
-        public T getPayload() {
+        /**
+         * Returns payload sent to worker.
+         *
+         * @return payload sent to worker.
+         */
+        T getPayload() {
             return payload;
         }
 
-        @Override
-        public long getWaitNanoTime() {
+        /**
+         * Returns time in nanoseconds when message was submitted to the worker thread.
+         *
+         * @return time in nanoseconds when message was submitted to the worker thread.
+         */
+        long getWaitNanoTime() {
             return timeAcceptedInNanos - timeSubmittedInNanos;
         }
 
-        @Override
-        public long getServiceNanoTime() {
+        /**
+         * Returns time in nanoseconds when message was accepted by the worker.
+         *
+         * @return time in nanoseconds when message was accepted by the worker.
+         */
+        long getServiceNanoTime() {
             return timeDoneInNanos - timeAcceptedInNanos;
         }
 
-        @Override
-        public long getResposeNanoTime() {
+        /**
+         * Returns time in nanoseconds when processing was done on message.
+         *
+         * @return time in nanoseconds when processing was done on message.
+         */
+        long getResponseNanoTime() {
             return timeDoneInNanos - timeSubmittedInNanos;
         }
 
         @Override
         public String toString() {
-            return "DefaultWorkerMeta [payload=" + payload + ", timeSubmittedInNanos=" + timeSubmittedInNanos
+            return "WorkerMeta [payload=" + payload + ", timeSubmittedInNanos=" + timeSubmittedInNanos
                     + ", timeAcceptedInNanos=" + timeAcceptedInNanos + ", timeDoneInNanos=" + timeDoneInNanos
                     + ", dropped=" + dropped + "]";
         }

@@ -25,7 +25,7 @@ public class InternalWorkerTest {
         RateGenerator rg = new ConstantRateGenerator(10);
         Object lock = new Object();
         AtomicInteger delegateInvokeCount = new AtomicInteger();
-        Worker<Integer> delegate = (x) -> {
+        Worker<Integer> delegate = (x, y, z) -> {
             synchronized (lock) {
                 delegateInvokeCount.incrementAndGet();
             }
@@ -72,7 +72,7 @@ public class InternalWorkerTest {
         CountDownLatch dsCountDownLatch = new CountDownLatch(3);
         Object lock = new Object();
         AtomicInteger delegateInvokeCount = new AtomicInteger();
-        Worker<Integer> delegate = (x) -> {
+        Worker<Integer> delegate = (x, y, z) -> {
             dsCountDownLatch.countDown();
             synchronized (lock) {
                 delegateInvokeCount.addAndGet(x);
@@ -93,7 +93,7 @@ public class InternalWorkerTest {
                 if (i == 4) {
                     try {
                         dsCountDownLatch.await();
-                    } catch (InterruptedException e) {
+                    } catch (InterruptedException ignored) {
                     }
                 }
                 return i++;
@@ -129,7 +129,7 @@ public class InternalWorkerTest {
         CountDownLatch dsCountDownLatch = new CountDownLatch(3);
         Object lock = new Object();
         AtomicInteger delegateInvokeCount = new AtomicInteger();
-        Worker<Integer> delegate = (x) -> {
+        Worker<Integer> delegate = (x, y, z) -> {
             dsCountDownLatch.countDown();
             synchronized (lock) {
                 delegateInvokeCount.addAndGet(x);
@@ -150,7 +150,7 @@ public class InternalWorkerTest {
                 if (i == 4) {
                     try {
                         dsCountDownLatch.await();
-                    } catch (InterruptedException e) {
+                    } catch (InterruptedException ignored) {
                     }
                 }
                 return i++;

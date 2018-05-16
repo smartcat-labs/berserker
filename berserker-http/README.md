@@ -19,10 +19,10 @@ Configuration can define following properties:
 14.. `headers` - Contains headers in a form of name-value map which will be added to each request. Optional.
 
 Worker `accept` method expects following properties:
-1. `url` - whole url to be used, it ignores `base-url`. Mutually exclusive with `url-sufix`.
-2. `url-sufix` - concatenates to `base-url` to construct url. Mutually exclusive with `url`.
+1. `url` - Whole url to be used, it ignores `base-url`. Mutually exclusive with `url-sufix`.
+2. `url-sufix` - Concatenates to `base-url` to construct url. Mutually exclusive with `url`.
 3. `method-type` - Method type of the request. Mandatory.
-4. `headers` - header names with its values. It will override headers with same name defined in configuration. Optional.
+4. `headers` - Header names with its values. It will override headers with same name defined in configuration. Optional.
 5. `body` - Payload of the request. Available only when `POST` or `PUT` method types are used. Optional.
 
 ## Configuration

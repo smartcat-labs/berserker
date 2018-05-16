@@ -2,7 +2,6 @@ package io.smartcat.berserker.cassandra.configuration;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +12,10 @@ import io.smartcat.berserker.api.Worker;
 import io.smartcat.berserker.cassandra.worker.CassandraWorker;
 import io.smartcat.berserker.configuration.ConfigurationParseException;
 import io.smartcat.berserker.configuration.WorkerConfiguration;
+
+import static io.smartcat.berserker.configuration.ConfigurationHelper.getMandatoryValue;
+import static io.smartcat.berserker.configuration.ConfigurationHelper.getOptionalValue;
+import static java.util.Collections.emptyList;
 
 /**
  * Configuration for Cassandra worker. Configuration map should contain following:
@@ -50,24 +53,13 @@ public class CassandraConfiguration implements WorkerConfiguration {
     @Override
     public Worker<?> getWorker(Map<String, Object> configuration) throws ConfigurationParseException {
         List<InetSocketAddress> connectionPointsWithPorts = getConnectionPointsWithPorts(configuration);
-        boolean useSSL = isConnectionSSLEnabled(configuration);
-        String keyspace = getKeyspace(configuration);
-        boolean async = getAsync(configuration);
-        List<String> bootstrapDDLCommands = getBootstrapDDLCommands(configuration);
+        boolean useSSL = getOptionalValue(configuration, USE_SSL, false);
+        String keyspace = getMandatoryValue(configuration, KEYSPACE);
+        boolean async = getOptionalValue(configuration, ASYNC, false);
+        List<String> bootstrapDDLCommands = getOptionalValue(configuration, BOOTSTRAP_COMMANDS, new ArrayList<>(0));
         List<PreparedStatement> prepStatements = getPreparedStatements(configuration);
         return new CassandraWorker(connectionPointsWithPorts, useSSL, keyspace, async, bootstrapDDLCommands,
             prepStatements);
-    }
-
-    private boolean isConnectionSSLEnabled(Map<String, Object> configuration) {
-        Object isEnabled = configuration.get(USE_SSL);
-        if (isEnabled == null) {
-            return false;
-        }
-        if (isEnabled instanceof Boolean) {
-            return (Boolean) isEnabled;
-        }
-        throw new RuntimeException(USE_SSL + " value must be either true or false");
     }
 
     private List<InetSocketAddress> getConnectionPointsWithPorts(Map<String, Object> configuration) {
@@ -84,39 +76,11 @@ public class CassandraConfiguration implements WorkerConfiguration {
         return result;
     }
 
-    private String getKeyspace(Map<String, Object> configuration) {
-        String keyspace = (String) configuration.get(KEYSPACE);
-        if (keyspace == null || keyspace.isEmpty()) {
-            throw new RuntimeException(KEYSPACE + " cannot be null nor empty.");
-        }
-        return keyspace;
-    }
-
-    private boolean getAsync(Map<String, Object> configuration) {
-        Object async = configuration.get(ASYNC);
-        if (async == null) {
-            return false;
-        }
-        if (async instanceof Boolean) {
-            return (Boolean) async;
-        }
-        throw new RuntimeException(ASYNC + " value must be either true or false");
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<String> getBootstrapDDLCommands(Map<String, Object> configuration) {
-        List<String> bootstrapCommands = (List<String>) configuration.get(BOOTSTRAP_COMMANDS);
-        if (bootstrapCommands == null) {
-            return Collections.emptyList();
-        }
-        return bootstrapCommands;
-    }
-
     @SuppressWarnings("unchecked")
     private List<PreparedStatement> getPreparedStatements(Map<String, Object> configuration) {
         List<Object> preparedStatements = (List<Object>) configuration.get(PREPARED_STATEMENTS);
         if (preparedStatements == null) {
-            return Collections.emptyList();
+            return emptyList();
         }
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.convertValue(preparedStatements, new TypeReference<List<PreparedStatement>>() {
