@@ -12,12 +12,12 @@ import io.smartcat.berserker.api.RateGenerator;
 import io.smartcat.berserker.api.Worker;
 import io.smartcat.berserker.rategenerator.ConstantRateGenerator;
 
-public class AsyncWorkerTest {
+public class InternalWorkerTest {
 
     /**
-     * AsyncWorker has 4 threads and queue of 4 elements. Each thread is blocked until load generator depletes data
+     * InternalWorker has 4 threads and queue of 4 elements. Each thread is blocked until load generator depletes data
      * source. Data source has 10 values. At that moment, 4 threads have taken first four values and there is four more
-     * values in queue to be processed. If load generator does not block, it means that AsyncWorker is non-blocking.
+     * values in queue to be processed. If load generator does not block, it means that InternalWorker is non-blocking.
      */
     @Test(timeout = 3000)
     public void should_not_block_thread_when_delegate_of_asyncWorker_is_blocking() throws Exception {
@@ -44,7 +44,7 @@ public class AsyncWorkerTest {
                 return i++;
             }
         };
-        AsyncWorker<Integer> w = new AsyncWorker<>(delegate, 4, true, null, 4);
+        InternalWorker<Integer> w = new InternalWorker<>(delegate, 4, true, null, 4);
         LoadGenerator<Integer> lg = new LoadGenerator<>(ds, rg, w);
 
         // WHEN
@@ -54,11 +54,11 @@ public class AsyncWorkerTest {
         w.close();
 
         // THEN
-        // load generator was not blocked meaning that AsyncWorker is non-blocking.
+        // load generator was not blocked meaning that InternalWorker is non-blocking.
     }
 
     /**
-     * AsyncWorker has 3 threads and queue of 3 elements. Each thread is blocked until load generator depletes data
+     * InternalWorker has 3 threads and queue of 3 elements. Each thread is blocked until load generator depletes data
      * source. After threads have taken first 3 values and queue has taken next 3 values. Queue is full with values 4,
      * 5, 6. Since values are dropped from head and added to tail. After 3 droppings and 3 additions, queue has 7, 8,
      * and 9.
@@ -99,7 +99,7 @@ public class AsyncWorkerTest {
                 return i++;
             }
         };
-        AsyncWorker<Integer> w = new AsyncWorker<>(delegate, 3, true, null, 3);
+        InternalWorker<Integer> w = new InternalWorker<>(delegate, 3, true, null, 3);
         LoadGenerator<Integer> lg = new LoadGenerator<>(ds, rg, w);
 
         // WHEN
@@ -115,7 +115,7 @@ public class AsyncWorkerTest {
     }
 
     /**
-     * AsyncWorker has 3 threads and queue of 3 elements. Each thread is blocked until load generator depletes data
+     * InternalWorker has 3 threads and queue of 3 elements. Each thread is blocked until load generator depletes data
      * source. After threads have taken first 3 values and queue has taken next 3 values. Queue is full with values 4,
      * 5, 6. Since values are dropped from tail and added to tail. After 3 droppings and 3 additions, queue has 4, 5,
      * and 9.
@@ -156,7 +156,7 @@ public class AsyncWorkerTest {
                 return i++;
             }
         };
-        AsyncWorker<Integer> w = new AsyncWorker<>(delegate, 3, false, null, 3);
+        InternalWorker<Integer> w = new InternalWorker<>(delegate, 3, false, null, 3);
         LoadGenerator<Integer> lg = new LoadGenerator<>(ds, rg, w);
 
         // WHEN

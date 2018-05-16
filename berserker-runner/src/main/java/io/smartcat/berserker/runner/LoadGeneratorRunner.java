@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.smartcat.berserker.worker.InternalWorker;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -32,7 +33,6 @@ import io.smartcat.berserker.configuration.MetricsReporterConfiguration;
 import io.smartcat.berserker.configuration.RateGeneratorConfiguration;
 import io.smartcat.berserker.configuration.WorkerConfiguration;
 import io.smartcat.berserker.configuration.YamlConfigurationLoader;
-import io.smartcat.berserker.worker.AsyncWorker;
 
 /**
  * Runner which takes configuration file, constructs {@link LoadGenerator} with depending {@link DataSource},
@@ -84,7 +84,7 @@ public class LoadGeneratorRunner {
                 configuration.rateGeneratorConfiguration);
         Worker workerDelegate = getWorker(loadGeneratorConfiguration.workerConfigurationName,
                 configuration.workerConfiguration);
-        AsyncWorker worker = wrapIntoAsyncWorker(workerDelegate, loadGeneratorConfiguration.queueCapacity,
+        InternalWorker worker = wrapIntoInternalWorker(workerDelegate, loadGeneratorConfiguration.queueCapacity,
                 loadGeneratorConfiguration.threadCount, loadGeneratorConfiguration.metricsPrefix);
         createAndStartReporter(worker.getMetricRegistry(), loadGeneratorConfiguration.metricsReporterConfigurationName,
                 configuration.metricsReporterConfiguration);
@@ -108,27 +108,27 @@ public class LoadGeneratorRunner {
 
     private static DataSource<?> getDataSource(String name, Map<String, Object> configuration)
             throws InstantiationException, IllegalAccessException, ConfigurationParseException {
-        DataSourceConfiguration dataSourceConfguration = getConfigurationWithName(name, DataSourceConfiguration.class);
-        return dataSourceConfguration.getDataSource(configuration);
+        DataSourceConfiguration dataSourceConfiguration = getConfigurationWithName(name, DataSourceConfiguration.class);
+        return dataSourceConfiguration.getDataSource(configuration);
     }
 
     private static RateGenerator getRateGenerator(String name, Map<String, Object> configuration)
             throws ConfigurationParseException {
-        RateGeneratorConfiguration rateGeneratorConfguration = getConfigurationWithName(name,
+        RateGeneratorConfiguration rateGeneratorConfiguration = getConfigurationWithName(name,
                 RateGeneratorConfiguration.class);
-        return rateGeneratorConfguration.getRateGenerator(configuration);
+        return rateGeneratorConfiguration.getRateGenerator(configuration);
     }
 
     private static Worker<?> getWorker(String name, Map<String, Object> configuration)
             throws ConfigurationParseException {
-        WorkerConfiguration workerConfguration = getConfigurationWithName(name, WorkerConfiguration.class);
-        return workerConfguration.getWorker(configuration);
+        WorkerConfiguration workerConfiguration = getConfigurationWithName(name, WorkerConfiguration.class);
+        return workerConfiguration.getWorker(configuration);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static AsyncWorker wrapIntoAsyncWorker(Worker workerDelegate, int queueCapacity, int threadCount,
-            String metricsPrefix) {
-        return new AsyncWorker(workerDelegate, queueCapacity, true, metricsPrefix, threadCount);
+    private static InternalWorker wrapIntoInternalWorker(Worker workerDelegate, int queueCapacity, int threadCount,
+                                                         String metricsPrefix) {
+        return new InternalWorker(workerDelegate, queueCapacity, true, metricsPrefix, threadCount);
     }
 
     private static void createAndStartReporter(MetricRegistry metricRegistry, String name,
@@ -140,8 +140,8 @@ public class LoadGeneratorRunner {
 
     private static <T extends BaseConfiguration> T getConfigurationWithName(String name, Class<T> clazz) {
         try {
-            List<T> configurations = new ArrayList<T>();
-            List<String> classNames = new ArrayList<String>();
+            List<T> configurations = new ArrayList<>();
+            List<String> classNames = new ArrayList<>();
             for (Class<? extends T> configurationClass : getSubTypesOf(clazz)) {
                 T configuration = configurationClass.newInstance();
                 if (name.equals(configuration.getName())) {

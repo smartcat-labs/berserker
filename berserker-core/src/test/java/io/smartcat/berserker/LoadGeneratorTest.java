@@ -8,7 +8,6 @@ import org.junit.Test;
 import io.smartcat.berserker.api.DataSource;
 import io.smartcat.berserker.datasource.RandomIntDataSource;
 import io.smartcat.berserker.rategenerator.ConstantRateGenerator;
-import io.smartcat.berserker.worker.NullWorker;
 
 public class LoadGeneratorTest {
 
@@ -18,7 +17,7 @@ public class LoadGeneratorTest {
     public void loadGenerator_should_be_terminated_when_terminate_signal_is_sent() {
         // GIVEN
         LoadGenerator<Integer> loadGenerator = new LoadGenerator<>(new RandomIntDataSource(),
-                new ConstantRateGenerator(1000), new NullWorker<>());
+                new ConstantRateGenerator(1000), (x) -> { });
         runInBackground(() -> {
             // wait a bit for loadGenerator to run
             wait(1000);
@@ -47,7 +46,7 @@ public class LoadGeneratorTest {
             public Integer getNext(long time) {
                 return 123;
             }
-        }, new ConstantRateGenerator(1000), new NullWorker<>());
+        }, new ConstantRateGenerator(1000), (x) -> { });
 
         // WHEN
         loadGenerator.run();
@@ -81,14 +80,10 @@ public class LoadGeneratorTest {
         double tolerance = 0.005;
         final AtomicLong numOfInvoked = new AtomicLong(0);
         LoadGenerator<Integer> loadGenerator = new LoadGenerator<>(new RandomIntDataSource(),
-                new ConstantRateGenerator(rate), (x) -> {
-                    numOfInvoked.incrementAndGet();
-                });
+                new ConstantRateGenerator(rate), (x) -> numOfInvoked.incrementAndGet());
 
         // WHEN
-        runInBackground(() -> {
-            loadGenerator.run();
-        });
+        runInBackground(() -> loadGenerator.run());
         wait(numOfSeconds * 1_000);
 
         loadGenerator.terminate();
