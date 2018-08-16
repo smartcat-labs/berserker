@@ -16,7 +16,8 @@ Configuration can define following properties:
 11. `max-request-retry` - The number of time the library will retry when an error occurs by the remote server. Optional, if not specified defaults to `5`.
 12. `connection-ttl` - The maximum time in millisecond a HTTP client will keep connection in the pool, or `-1` to keep connection while possible. Optional, if not specified defaults to `-1`.
 13. `base-url` - Can be concatenated with request property `url-sufix` to construct URL. Optional, depending on whether `url` or `url-sufix` is specified.
-14.. `headers` - Contains headers in a form of name-value map which will be added to each request. Optional.
+14. `headers` - Contains headers in a form of name-value map which will be added to each request. Optional.
+15. `error-codes` - List of HTTP codes that should be considered errors. Optional, defaults to all `4**` and `5**` codes.
 
 Worker `accept` method expects following properties:
 1. `url` - Whole url to be used, it ignores `base-url`. Mutually exclusive with `url-sufix`.
@@ -47,6 +48,11 @@ worker-configuration:
   headers:
     Content-Type: application/json
     X-Custom-Header-1: custom-value
+  error-codes:
+    - 400
+    - 401
+    - 403
+    - 404
 ```
 
 For whole configuration, take a look at [Ranger-HTTP example](../berserker-runner/src/example/resources/ranger-http.yml).
