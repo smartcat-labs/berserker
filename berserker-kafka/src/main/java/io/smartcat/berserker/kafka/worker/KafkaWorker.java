@@ -9,17 +9,13 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import io.smartcat.berserker.api.Worker;
 
 /**
- * Worker that publishes accepted message to Kafka cluster. Message must contain key and value. It uses
- * {@link KafkaProducer} internally to publish messages, producer can be configured using YAML config file containing
- * following <a href="https://kafka.apache.org/documentation/#producerconfigs">configuration properties</a>.
- * Additionally, file must contain <code>topic</code> property set to value of the topic to which messages will
- * be published and may contain <code>async</code> property to determine whether messages will be sent asynchronously or
- * synchronously.
+ * Worker that publishes accepted message to Kafka cluster.
  */
 public class KafkaWorker implements Worker<Map<String, Object>>, AutoCloseable {
 
     private static final String KEY = "key";
     private static final String VALUE = "value";
+    private static final String TOPIC = "topic";
 
     private final Map<String, Object> configuration;
     private final boolean async;
@@ -28,11 +24,13 @@ public class KafkaWorker implements Worker<Map<String, Object>>, AutoCloseable {
     private Producer<String, String> producer;
 
     /**
-     * Constructs Kafka worker with specified <code>configuration</code> to be used by {@link KafkaProducer}.
+     * Constructs Kafka worker with specified properties.
      *
-     * @param configuration Configuration to be used by {@link KafkaProducer}.
+     * @param configuration Map containing configuration properties to be used by {@link KafkaProducer}. Map contains
+     * common Kafka producer
+     * <a href="https://kafka.apache.org/documentation/#producerconfigs">configuration properties</a>.
      * @param async Indicates whether messages should be sent asynchronously or synchronously.
-     * @param topic Kafka topic to which to send messages.
+     * @param topic Kafka topic to which to send messages. Optional.
      */
     public KafkaWorker(Map<String, Object> configuration, boolean async, String topic) {
         this.configuration = configuration;
@@ -41,11 +39,27 @@ public class KafkaWorker implements Worker<Map<String, Object>>, AutoCloseable {
         init();
     }
 
+    /**
+     * Accepts following arguments:
+     * <ul>
+     * <li><code><b>key</b></code> - Key of the message. Optional, if not specified, Kafka producer will calculate
+     * partition based on message value.</li>
+     * <li><code><b>value</b></code> - Value of the message. Mandatory.</li>
+     * <li><code><b>topic</b></code> - Topic to which to send message. Mandatory if topic on configuration level is not
+     * specified. If it is, this topic value will override it. If topic is not specified neither on configuration level
+     * nor here, exception will be thrown.</li>
+     * </ul>
+     */
     @Override
     public void accept(Map<String, Object> message, Runnable commitSuccess, Runnable commitFailure) {
         String key = (String) message.get(KEY);
         String value = (String) message.get(VALUE);
-        ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, value);
+        if (value == null) {
+            throw new RuntimeException("'value' is mandatory.");
+        }
+        String messageLevelTopic = (String) message.get(TOPIC);
+        String calculatedTopic = getCalculatedTopic(messageLevelTopic);
+        ProducerRecord<String, String> record = new ProducerRecord<>(calculatedTopic, key, value);
         Future<RecordMetadata> futureResponse = producer.send(record, (metadata, exception) -> {
             if (exception == null) {
                 commitSuccess.run();
@@ -63,7 +77,7 @@ public class KafkaWorker implements Worker<Map<String, Object>>, AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         producer.close();
     }
 
@@ -77,5 +91,13 @@ public class KafkaWorker implements Worker<Map<String, Object>>, AutoCloseable {
         StringSerializer serializer = new StringSerializer();
         serializer.configure(configuration, isKey);
         return serializer;
+    }
+
+    private String getCalculatedTopic(String messageLevelTopic) {
+        String calculatedTopic = messageLevelTopic != null ? messageLevelTopic : topic;
+        if (calculatedTopic == null) {
+            throw new RuntimeException("Topic must be present on either configuration or message level.");
+        }
+        return calculatedTopic;
     }
 }
