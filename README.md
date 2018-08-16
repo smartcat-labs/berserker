@@ -106,6 +106,7 @@ List of existing modules:
 ### Usage
 
 Berserker can be used either as a library or as a stand-alone command line tool.
+Configuration [examples](berserker-runner/src/example/resources) can be used as starting point.
 
 #### Library usage
 
