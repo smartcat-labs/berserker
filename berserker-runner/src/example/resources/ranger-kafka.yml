@@ -25,6 +25,7 @@ data-source-configuration:
     kafkaMessage:
       key: randomContentString(10, ['A'..'Z', '0'..'9'])
       value: json($measurement)
+      topic: random(['topic1', 'topic2', 'topic3'])
 
   output: $kafkaMessage
 
