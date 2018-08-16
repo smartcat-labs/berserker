@@ -74,6 +74,11 @@ worker-configuration:
   headers:
     X-Custom-Header-1: val-1
     X-Custom-Header-2: val-2
+  error-codes:
+    - 400
+    - 401
+    - 403
+    - 404
   
 
 metrics-reporter-configuration:

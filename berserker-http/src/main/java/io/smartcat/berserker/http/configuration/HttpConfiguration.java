@@ -8,18 +8,11 @@ import java.util.List;
 import java.util.Map;
 
 import io.smartcat.berserker.api.Worker;
-import io.smartcat.berserker.configuration.ConfigurationParseException;
 import io.smartcat.berserker.configuration.WorkerConfiguration;
 import io.smartcat.berserker.http.worker.HttpWorker;
 
 /**
- * Configuration for HTTP worker. Configuration map should contain following:
- * <ul>
- * <li><code><b>base-url</b></code> - Base url to use, mandatory if worker will accept <code><b>url-sufix</b></code>,
- * unnecessary if worker will accept <code><b>url</b></code>.</li>
- * <li><code><b>headers</b></code> - Key - value map of header names and header values.</li>
- * </ul>
- * All other values in map are ignored.
+ * Configuration for HTTP worker.
  */
 public class HttpConfiguration implements WorkerConfiguration {
 
@@ -48,8 +41,46 @@ public class HttpConfiguration implements WorkerConfiguration {
         return "HTTP";
     }
 
+    /**
+     * Creates an instance of {@link HttpWorker} for given set of configuration properties.
+     * Configuration map should contain following:
+     * <ul>
+     * <li><code><b>async</b></code> - Indicates whether request should be sent in async or sync fashion. Optional,
+     * defaults to <code>false</code>.</li>
+     * <li><code><b>keep-alive</b></code> - Indicates whether HTTP keep-alive is enabled or disabled. Optional,
+     * defaults to <code>true</code>.</li>
+     * <li><code><b>max-connections</b></code> - The maximum number of connections a HTTP client can handle, or
+     * <code>-1</code> for no connection limit. Optional, defaults to <code>-1</code>.</li>
+     * <li><code><b>max-connections-per-host</b></code> - The maximum number of connections per host a HTTP client can
+     * handle, or <code>-1</code> for no connection limit. Optional, defaults to <code>-1</code>.</li>
+     * <li><code><b>connect-timeout</b></code> - The maximum time in millisecond a HTTP client can wait when connecting
+     * to a remote host. Optional, defaults to <code>5000</code>.</li>
+     * <li><code><b>read-timeout</b></code> - The maximum time in millisecond a HTTP client can stay idle. Optional,
+     * defaults to <code>60000</code>.</li>
+     * <li><code><b>pooled-connection-idle-timeout</b></code> - The maximum time in millisecond a HTTP client will keep
+     * connection in pool. Optional, defaults to <code>60000</code>.</li>
+     * <li><code><b>request-timeout</b></code> - The maximum time in millisecond a HTTP client waits until the response
+     * is completed. Optional, defaults to <code>60000</code>.</li>
+     * <li><code><b>follow-redirect</b></code> - Indicates whether HTTP redirect is enabled. Optional, defaults to
+     * <code>true</code>.</li>
+     * <li><code><b>max-redirects</b></code> - The maximum number of HTTP redirects. Optional, defaults to
+     * <code>5</code>.</li>
+     * <li><code><b>max-request-retry</b></code> - The number of time the library will retry when an error occurs by
+     * the remote server. Optional, defaults to <code>5</code>.</li>
+     * <li><code><b>connection-ttl</b></code> - The maximum time in millisecond a HTTP client will keep connection in
+     * the pool, or `-1` to keep connection while possible. Optional, defaults to <code>-1</code>.</li>
+     * <li><code><b>base-url</b></code> - Base url to use, mandatory if worker will accept
+     * <code><b>url-sufix</b></code>, unnecessary if worker will accept <code><b>url</b></code>.</li>
+     * <li><code><b>headers</b></code> - Contains headers in a form of name-value map which will be added to each
+     * request. Optional.</li>
+     * <li><code><b>error-codes</b></code> - List of HTTP codes to be considered as errors. Optional, defaults to
+     * all <code>4**</code> and <code>5**</code> codes.</li>
+     * </ul>
+     * @param configuration Configuration specific to this worker.
+     * @return An instance of {@link HttpWorker}.
+     */
     @Override
-    public Worker<?> getWorker(Map<String, Object> configuration) throws ConfigurationParseException {
+    public Worker<?> getWorker(Map<String, Object> configuration) {
         boolean async = getOptionalValue(configuration, ASYNC, false);
         boolean keepAlive = getOptionalValue(configuration, KEEP_ALIVE, true);
         int maxConnections = getOptionalValue(configuration, MAX_CONNECTIONS, -1);
