@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.Cluster.Builder;
@@ -40,7 +41,7 @@ public class CassandraWorker implements Worker<Map<String, Object>> {
      * @param bootstrapDDLCommands List of CQL commands to execute only once after connection to Cassandra cluster is
      *            established. Suitable for creating keyspaces, tables and populating some initial data if needed.
      * @param prepStatements List of prepared statements to create. Each statement is defined with id and can be
-     *            referenced from {@link #accept(Map, Runnable, Runnable)} method.
+     *            referenced from {@link #accept(Map, Runnable, Consumer)} method.
      */
     public CassandraWorker(List<InetSocketAddress> connectionPointsWithPorts, boolean useSSL, String keyspace,
             boolean async, List<String> bootstrapDDLCommands, List<PreparedStatement> prepStatements) {
@@ -98,7 +99,7 @@ public class CassandraWorker implements Worker<Map<String, Object>> {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public void accept(Map<String, Object> queryMetadata, Runnable commitSuccess, Runnable commitFailure) {
+    public void accept(Map<String, Object> queryMetadata, Runnable commitSuccess, Consumer<Throwable> commitFailure) {
         ConsistencyLevel consistencyLevel = getConsistencyLevel(queryMetadata);
         String statement = (String) queryMetadata.get(QUERY);
         Statement toExecute;
@@ -131,7 +132,7 @@ public class CassandraWorker implements Worker<Map<String, Object>> {
 
             @Override
             public void onFailure(Throwable t) {
-                commitFailure.run();
+                commitFailure.accept(t);
             }
         }, MoreExecutors.directExecutor());
         if (!async) {

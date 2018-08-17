@@ -1,5 +1,7 @@
 package io.smartcat.berserker.api;
 
+import java.util.function.Consumer;
+
 /**
  * Worker interface providing API for task execution.
  *
@@ -14,5 +16,5 @@ public interface Worker<T> {
      * @param commitSuccess Callback to be invoked when processing is successful.
      * @param commitFailure Callback to be invoked in case of a failure.
      */
-    void accept(T message, Runnable commitSuccess, Runnable commitFailure);
+    void accept(T message, Runnable commitSuccess, Consumer<Throwable> commitFailure);
 }

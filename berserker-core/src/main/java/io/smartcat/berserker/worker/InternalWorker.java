@@ -186,7 +186,7 @@ public class InternalWorker<T> implements Consumer<T>, AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         if (!closed) {
             threadPoolExecutor.shutdownNow();
             closed = true;
@@ -206,6 +206,7 @@ public class InternalWorker<T> implements Consumer<T>, AutoCloseable {
             ThreadFactory threadFactory) {
         ThreadPoolExecutor result = new ThreadPoolExecutor(threadCount, threadCount, 10, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(), threadFactory);
+        String workerName = delegate.getClass().getName();
         while (result.getPoolSize() < threadCount) {
             result.submit(() -> {
                 while (true) {
@@ -221,7 +222,7 @@ public class InternalWorker<T> implements Consumer<T>, AutoCloseable {
                             totalResponseTime.update(meta.getResponseNanoTime());
                             successProcessedThroughput.mark();
                             totalProcessedThroughput.mark();
-                        }, () -> {
+                        }, (throwable) -> {
                             meta.markAsDone();
                             waitTime.update(meta.getWaitNanoTime());
                             failureServiceTime.update(meta.getServiceNanoTime());
@@ -230,9 +231,12 @@ public class InternalWorker<T> implements Consumer<T>, AutoCloseable {
                             totalResponseTime.update(meta.getResponseNanoTime());
                             failureProcessedThroughput.mark();
                             totalProcessedThroughput.mark();
+                            if (throwable != null) {
+                                LOGGER.error("Error while accepting payload at worker: " + workerName + ". Error: ",
+                                        throwable);
+                            }
                         });
                     } catch (Exception e) {
-                        String workerName = delegate.getClass().getName();
                         LOGGER.error("Error while accepting payload at worker: " + workerName + ". Error: ", e);
                     }
                 }

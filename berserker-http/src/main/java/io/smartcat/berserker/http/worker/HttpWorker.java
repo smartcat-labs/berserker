@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.asynchttpclient.Dsl.*;
 
@@ -93,7 +94,7 @@ public class HttpWorker implements Worker<Map<String, Object>> {
      * </ul>
      */
     @Override
-    public void accept(Map<String, Object> requestMetadata, Runnable commitSuccess, Runnable commitFailure) {
+    public void accept(Map<String, Object> requestMetadata, Runnable commitSuccess, Consumer<Throwable> commitFailure) {
         String url = (String) requestMetadata.get(URL);
         String urlSufix = (String) requestMetadata.get(URL_SUFIX);
         Map<String, String> requestHeaders = getHeaders(requestMetadata);
@@ -107,9 +108,9 @@ public class HttpWorker implements Worker<Map<String, Object>> {
                 createRequest(methodType, calculatedUrl, calculatedHeaders, body),
                 new AsyncCompletionHandler<Response>() {
                     @Override
-                    public Response onCompleted(Response response) throws Exception {
+                    public Response onCompleted(Response response) {
                         if (errorCodes.contains(response.getStatusCode())) {
-                            commitFailure.run();
+                            commitFailure.accept(null);
                         } else {
                             commitSuccess.run();
                         }
@@ -118,7 +119,7 @@ public class HttpWorker implements Worker<Map<String, Object>> {
 
                     @Override
                     public void onThrowable(Throwable t) {
-                        commitFailure.run();
+                        commitFailure.accept(t);
                     }
                 });
         if (!async) {

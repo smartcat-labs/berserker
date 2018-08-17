@@ -1,6 +1,7 @@
 package io.smartcat.berserker.mqtt.worker;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -59,7 +60,7 @@ public class MqttWorker implements Worker<Map<String, Object>>, AutoCloseable {
     }
 
     @Override
-    public void accept(Map<String, Object> message, Runnable commitSuccess, Runnable commitFailure) {
+    public void accept(Map<String, Object> message, Runnable commitSuccess, Consumer<Throwable> commitFailure) {
         ensureConnected();
         String topic = (String) message.get(TOPIC);
         int qos = (Integer) message.get(QOS);
@@ -74,8 +75,8 @@ public class MqttWorker implements Worker<Map<String, Object>>, AutoCloseable {
                 }
 
                 @Override
-                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    commitFailure.run();
+                public void onFailure(IMqttToken asyncActionToken, Throwable t) {
+                    commitFailure.accept(t);
                 }
             });
             if (!async) {
@@ -87,7 +88,7 @@ public class MqttWorker implements Worker<Map<String, Object>>, AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         try {
             client.close();
         } catch (MqttException e) {

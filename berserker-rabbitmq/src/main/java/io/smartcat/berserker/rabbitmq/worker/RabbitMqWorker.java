@@ -3,6 +3,7 @@ package io.smartcat.berserker.rabbitmq.worker;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
@@ -53,7 +54,7 @@ public class RabbitMqWorker implements Worker<Map<String, Object>>, AutoCloseabl
     }
 
     @Override
-    public void accept(Map<String, Object> message, Runnable commitSuccess, Runnable commitFailure) {
+    public void accept(Map<String, Object> message, Runnable commitSuccess, Consumer<Throwable> commitFailure) {
         String exchangeName = (String) message.get(EXCHANGE_NAME);
         String routingKey = (String) message.get(ROUTING_KEY);
         BasicProperties props = createProperties(message);
@@ -62,8 +63,7 @@ public class RabbitMqWorker implements Worker<Map<String, Object>>, AutoCloseabl
             channel.basicPublish(exchangeName, routingKey, props, messageContent.getBytes());
             commitSuccess.run();
         } catch (IOException e) {
-            commitFailure.run();
-            throw new RuntimeException(e);
+            commitFailure.accept(e);
         }
     }
 

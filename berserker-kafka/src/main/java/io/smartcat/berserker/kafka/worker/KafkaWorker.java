@@ -2,6 +2,7 @@ package io.smartcat.berserker.kafka.worker;
 
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -51,7 +52,7 @@ public class KafkaWorker implements Worker<Map<String, Object>>, AutoCloseable {
      * </ul>
      */
     @Override
-    public void accept(Map<String, Object> message, Runnable commitSuccess, Runnable commitFailure) {
+    public void accept(Map<String, Object> message, Runnable commitSuccess, Consumer<Throwable> commitFailure) {
         String key = (String) message.get(KEY);
         String value = (String) message.get(VALUE);
         if (value == null) {
@@ -64,7 +65,7 @@ public class KafkaWorker implements Worker<Map<String, Object>>, AutoCloseable {
             if (exception == null) {
                 commitSuccess.run();
             } else {
-                commitFailure.run();
+                commitFailure.accept(exception);
             }
         });
         if (!async) {
