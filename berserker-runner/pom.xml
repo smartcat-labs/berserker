@@ -4,7 +4,7 @@
     <parent>
         <artifactId>berserker</artifactId>
         <groupId>io.smartcat</groupId>
-        <version>0.0.12-SNAPSHOT</version>
+        <version>0.0.12</version>
     </parent>
 
     <artifactId>berserker-runner</artifactId>
