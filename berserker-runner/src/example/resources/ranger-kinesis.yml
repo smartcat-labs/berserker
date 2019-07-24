@@ -1,0 +1,36 @@
+load-generator-configuration:
+  data-source-configuration-name: Ranger
+  rate-generator-configuration-name: default
+  worker-configuration-name: Kinesis
+  metrics-reporter-configuration-name: SimpleConsoleReporter
+  thread-count: 4
+  queue-capacity: 1000
+
+data-source-configuration:
+  values:
+    tag_values: circular([random(0.0..4.0),random(12.0..35.0),random(1.0..6.0)])
+    measurement:
+      tag_id: circular([1233, 1256, 2843])
+      value: $tag_values
+      timestamp: now()
+      granularity: string("instant")
+      branch_name: circular([string("Abrantes"), string("PT")])
+    kinesisMessage:
+      msg: json($measurement)
+  output: $kinesisMessage
+
+rate-generator-configuration:
+  rates:
+    r: 100
+  output: $r
+
+worker-configuration:
+  async: true
+  stream: op-test
+  producer-configuration:
+#    RecordMaxBufferedTime: 100
+#    MaxConnections: 4
+#    RequestTimeout: 6000
+    Region: eu-central-1
+
+metrics-reporter-configuration:
