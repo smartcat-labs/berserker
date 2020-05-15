@@ -60,7 +60,7 @@
         <version.guava>20.0</version.guava>
         <version.commons-cli>1.3.1</version.commons-cli>
         <version.snakeyaml>1.18</version.snakeyaml>
-        <version.jackson>2.9.9</version.jackson>
+        <version.jackson>2.11.0</version.jackson>
         <version.dropwizard.metrics>4.1.0</version.dropwizard.metrics>
         <version.junit>4.12</version.junit>
         <version.pitest>1.1.11</version.pitest>
