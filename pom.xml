@@ -64,7 +64,7 @@
         <version.dropwizard.metrics>4.1.0</version.dropwizard.metrics>
         <version.junit>4.12</version.junit>
         <version.pitest>1.1.11</version.pitest>
-        <version.netty>4.1.38.Final</version.netty>
+        <version.netty>4.1.46.Final</version.netty>
         <source.level>1.8</source.level>
         <code.level>1.8</code.level>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
