@@ -16,7 +16,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.rabbitmq>5.1.1</version.rabbitmq>
-        <version.eclipse.paho>1.2.0</version.eclipse.paho>
+        <version.eclipse.paho>1.2.1</version.eclipse.paho>
     </properties>
 
     <dependencies>
